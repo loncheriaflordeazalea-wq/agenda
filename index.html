@@ -398,17 +398,16 @@ let offsetSemana = 0;
 let slotsData = [];
 let slotActivo = null;
 
-// ── API ──
-async function api(method, body) {
+// ── API — todo GET para evitar CORS en Apps Script ──
+async function api(params) {
   if (!CFG.url) { toast('Configura la URL del Apps Script primero', 'err'); return null; }
   try {
-    const opts = { method, headers: { 'Content-Type': 'application/json' } };
-    if (body) opts.body = JSON.stringify(body);
-    const url = method === 'GET' ? `${CFG.url}?semana=${offsetSemana}` : CFG.url;
-    const r = await fetch(url, opts);
-    return await r.json();
+    const qs = new URLSearchParams(params).toString();
+    const r = await fetch(`${CFG.url}?${qs}`);
+    const text = await r.text();
+    return JSON.parse(text);
   } catch (e) {
-    toast('Error de conexión: ' + e.message, 'err');
+    toast('Error: ' + e.message, 'err');
     return null;
   }
 }
@@ -423,7 +422,7 @@ async function cargarSlots() {
     return;
   }
 
-  const data = await api('GET');
+  const data = await api({ accion: 'slots', semana: offsetSemana });
   if (!data || !data.ok) {
     lista.innerHTML = '<div style="padding:20px;color:var(--ocupado-text);font-size:13px">Error cargando slots. Verifica la URL.</div>';
     return;
