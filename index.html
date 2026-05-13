@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Panel de Citas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0f0f0f;
+    --surface: #181818;
+    --surface2: #222222;
+    --border: #2e2e2e;
+    --border2: #3a3a3a;
+    --text: #e8e8e4;
+    --text2: #888884;
+    --text3: #555552;
+    --accent: #c8f060;
+    --accent2: #a8d040;
+    --libre: #1a2a0a;
+    --libre-border: #4a7a10;
+    --libre-text: #a8e840;
+    --ocupado: #2a1a1a;
+    --ocupado-border: #7a3010;
+    --ocupado-text: #e87040;
+    --bloqueado: #1a1a1a;
+    --bloqueado-border: #383838;
+    --bloqueado-text: #666660;
+    --font: 'DM Sans', sans-serif;
+    --mono: 'DM Mono', monospace;
+    --radius: 8px;
+    --radius-lg: 14px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 14px;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .logo {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .logo span { color: var(--text2); }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .btn-config {
+    background: none; border: 1px solid var(--border2); color: var(--text2);
+    padding: 6px 14px; border-radius: var(--radius); cursor: pointer;
+    font-family: var(--font); font-size: 13px; transition: all .15s;
+  }
+  .btn-config:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── LAYOUT ── */
+  .app { display: flex; height: calc(100vh - 57px); }
+
+  /* ── SIDEBAR ── */
+  aside {
+    width: 300px; min-width: 300px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .semana-nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  .semana-label { font-family: var(--mono); font-size: 12px; color: var(--text2); letter-spacing: .06em; }
+  .nav-btn {
+    background: none; border: 1px solid var(--border2); color: var(--text2);
+    width: 28px; height: 28px; border-radius: 6px; cursor: pointer;
+    font-size: 16px; display: flex; align-items: center; justify-content: center;
+    transition: all .15s; line-height: 1;
+  }
+  .nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .stats {
+    display: flex; gap: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .stat {
+    flex: 1; padding: 12px 14px; text-align: center;
+    border-right: 1px solid var(--border);
+  }
+  .stat:last-child { border-right: none; }
+  .stat-n { font-family: var(--mono); font-size: 20px; font-weight: 500; color: var(--accent); }
+  .stat-l { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+  .dias-list { overflow-y: auto; flex: 1; }
+  .dia-group {}
+  .dia-header {
+    padding: 10px 18px 6px;
+    font-family: var(--mono); font-size: 11px; color: var(--text3);
+    letter-spacing: .08em; text-transform: uppercase;
+    position: sticky; top: 0; background: var(--surface); z-index: 10;
+    border-bottom: 1px solid var(--border);
+  }
+  .dia-header.hoy { color: var(--accent); }
+  .slot {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 18px; cursor: pointer; border-bottom: 1px solid var(--border);
+    transition: background .1s;
+    gap: 10px;
+  }
+  .slot:hover { background: var(--surface2); }
+  .slot.activo { background: var(--surface2); border-left: 3px solid var(--accent); }
+  .slot-hora { font-family: var(--mono); font-size: 12px; color: var(--text2); min-width: 58px; }
+  .slot-info { flex: 1; min-width: 0; }
+  .slot-nombre { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .slot-servicio { font-size: 11px; color: var(--text3); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pill {
+    font-size: 10px; font-family: var(--mono); padding: 2px 8px; border-radius: 20px;
+    border: 1px solid; white-space: nowrap; text-transform: uppercase; letter-spacing: .04em;
+  }
+  .pill.libre { background: var(--libre); border-color: var(--libre-border); color: var(--libre-text); }
+  .pill.ocupado { background: var(--ocupado); border-color: var(--ocupado-border); color: var(--ocupado-text); }
+  .pill.bloqueado { background: var(--bloqueado); border-color: var(--bloqueado-border); color: var(--bloqueado-text); }
+
+  /* ── MAIN ── */
+  main {
+    flex: 1; overflow-y: auto;
+    display: flex; flex-direction: column;
+  }
+  .main-inner {
+    max-width: 560px; margin: 0 auto; padding: 32px 24px;
+    width: 100%;
+  }
+
+  .empty-state {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; color: var(--text3); text-align: center;
+    padding: 60px 24px;
+  }
+  .empty-icon { font-size: 40px; margin-bottom: 16px; opacity: .4; }
+  .empty-state p { font-size: 13px; line-height: 1.6; }
+
+  /* ── PANEL DE CITA ── */
+  .panel-titulo {
+    font-family: var(--mono); font-size: 11px; color: var(--text3);
+    letter-spacing: .1em; text-transform: uppercase; margin-bottom: 20px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .panel-titulo::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .slot-seleccionado {
+    background: var(--surface); border: 1px solid var(--border2);
+    border-radius: var(--radius-lg); padding: 18px; margin-bottom: 24px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .slot-sel-fecha { text-align: center; }
+  .slot-sel-dia { font-family: var(--mono); font-size: 22px; font-weight: 500; color: var(--accent); line-height: 1; }
+  .slot-sel-mes { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: .06em; margin-top: 2px; }
+  .slot-sel-divider { width: 1px; height: 40px; background: var(--border); }
+  .slot-sel-info { flex: 1; }
+  .slot-sel-hora { font-family: var(--mono); font-size: 18px; color: var(--text); }
+  .slot-sel-estado { font-size: 12px; color: var(--text3); margin-top: 3px; }
+
+  /* Cita ya registrada */
+  .cita-existente {
+    background: var(--surface); border: 1px solid var(--ocupado-border);
+    border-radius: var(--radius-lg); padding: 20px; margin-bottom: 24px;
+  }
+  .cita-ex-nombre { font-size: 18px; font-weight: 500; margin-bottom: 8px; }
+  .cita-ex-row { display: flex; gap: 6px; align-items: center; font-size: 13px; color: var(--text2); margin-bottom: 4px; }
+  .cita-ex-row span { color: var(--text3); }
+  .wa-btns { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+  .btn-wa {
+    flex: 1; min-width: 140px; padding: 10px 16px; border-radius: var(--radius);
+    border: none; cursor: pointer; font-family: var(--font); font-size: 13px;
+    font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 8px;
+    text-decoration: none; transition: opacity .15s;
+  }
+  .btn-wa:hover { opacity: .85; }
+  .btn-wa-cliente { background: #1a4a1a; color: #6be86b; border: 1px solid #2a7a2a; }
+  .btn-wa-negocio { background: #1a3a4a; color: #6bb4e8; border: 1px solid #2a5a7a; }
+  .btn-cancelar {
+    width: 100%; margin-top: 10px; padding: 10px; border-radius: var(--radius);
+    background: none; border: 1px solid var(--ocupado-border); color: var(--ocupado-text);
+    cursor: pointer; font-family: var(--font); font-size: 13px; transition: all .15s;
+  }
+  .btn-cancelar:hover { background: var(--ocupado); }
+
+  /* Formulario nueva cita */
+  .form-cita { display: flex; flex-direction: column; gap: 14px; }
+  .form-row { display: flex; gap: 14px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+  .form-group label { font-size: 11px; color: var(--text3); letter-spacing: .06em; text-transform: uppercase; font-family: var(--mono); }
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    background: var(--surface); border: 1px solid var(--border2);
+    color: var(--text); padding: 10px 13px; border-radius: var(--radius);
+    font-family: var(--font); font-size: 14px; transition: border-color .15s;
+    outline: none;
+  }
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus { border-color: var(--accent); }
+  .form-group select option { background: #222; }
+  .form-group textarea { resize: vertical; min-height: 70px; }
+
+  .servicios-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  }
+  .servicio-chip {
+    padding: 9px 12px; border-radius: var(--radius); border: 1px solid var(--border2);
+    background: none; color: var(--text2); cursor: pointer; font-family: var(--font);
+    font-size: 12px; text-align: center; transition: all .15s;
+  }
+  .servicio-chip:hover { border-color: var(--accent); color: var(--accent); }
+  .servicio-chip.seleccionado { background: #1a2a05; border-color: var(--libre-border); color: var(--libre-text); }
+
+  .btn-guardar {
+    background: var(--accent); color: #0f0f0f; border: none; padding: 13px;
+    border-radius: var(--radius); font-family: var(--font); font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: background .15s; margin-top: 6px;
+  }
+  .btn-guardar:hover { background: var(--accent2); }
+  .btn-guardar:disabled { opacity: .4; cursor: not-allowed; }
+
+  /* Bloqueo */
+  .bloqueo-section {
+    margin-top: 24px;
+    border-top: 1px solid var(--border);
+    padding-top: 20px;
+  }
+
+  /* Toast */
+  #toast {
+    position: fixed; bottom: 24px; right: 24px; z-index: 999;
+    background: var(--surface2); border: 1px solid var(--border2);
+    border-radius: var(--radius-lg); padding: 14px 20px;
+    font-size: 13px; color: var(--text);
+    transform: translateY(80px); opacity: 0; transition: all .3s;
+    max-width: 320px; pointer-events: none;
+  }
+  #toast.visible { transform: translateY(0); opacity: 1; }
+  #toast.ok { border-color: var(--libre-border); }
+  #toast.err { border-color: var(--ocupado-border); }
+
+  /* Loading */
+  .loading { opacity: .5; pointer-events: none; }
+  .spinner {
+    display: inline-block; width: 14px; height: 14px;
+    border: 2px solid var(--border2); border-top-color: var(--accent);
+    border-radius: 50%; animation: spin .6s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Modal config */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,.8);
+    z-index: 200; align-items: center; justify-content: center;
+  }
+  .modal-overlay.visible { display: flex; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border2);
+    border-radius: var(--radius-lg); padding: 28px; width: 420px; max-width: 95vw;
+  }
+  .modal h3 { font-size: 16px; margin-bottom: 20px; color: var(--accent); font-family: var(--mono); }
+  .modal .form-group { margin-bottom: 14px; }
+  .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
+  .btn-modal-ok {
+    flex: 1; background: var(--accent); color: #0f0f0f; border: none;
+    padding: 11px; border-radius: var(--radius); cursor: pointer;
+    font-family: var(--font); font-weight: 600; font-size: 14px;
+  }
+  .btn-modal-cancel {
+    flex: 1; background: none; border: 1px solid var(--border2); color: var(--text2);
+    padding: 11px; border-radius: var(--radius); cursor: pointer;
+    font-family: var(--font); font-size: 14px;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">agenda <span>/</span> panel</div>
+  <div class="header-right">
+    <span id="negocio-label" style="font-size:13px;color:var(--text2)"></span>
+    <button class="btn-config" onclick="abrirConfig()">⚙ Configurar</button>
+  </div>
+</header>
+
+<div class="app">
+  <aside>
+    <div class="semana-nav">
+      <button class="nav-btn" onclick="cambiarSemana(-1)">‹</button>
+      <div class="semana-label" id="semana-label">Cargando...</div>
+      <button class="nav-btn" onclick="cambiarSemana(1)">›</button>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="stat-n" id="stat-libres">—</div><div class="stat-l">Libres</div></div>
+      <div class="stat"><div class="stat-n" id="stat-citas" style="color:var(--ocupado-text)">—</div><div class="stat-l">Citas</div></div>
+      <div class="stat"><div class="stat-n" id="stat-bloqueados" style="color:var(--text3)">—</div><div class="stat-l">Bloq.</div></div>
+    </div>
+    <div class="dias-list" id="lista-slots">
+      <div style="padding:24px;text-align:center;color:var(--text3);font-size:13px">
+        <div class="spinner" style="margin:0 auto 12px"></div><br>Cargando slots...
+      </div>
+    </div>
+  </aside>
+
+  <main id="main-panel">
+    <div class="empty-state">
+      <div class="empty-icon">🗓</div>
+      <p>Selecciona un slot del panel izquierdo<br>para ver detalles o registrar una cita.</p>
+    </div>
+  </main>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- Modal de configuración -->
+<div class="modal-overlay" id="modal-config">
+  <div class="modal">
+    <h3>// configuración</h3>
+    <div class="form-group">
+      <label>URL del Apps Script (Web App)</label>
+      <input type="text" id="cfg-url" placeholder="https://script.google.com/macros/s/..."/>
+    </div>
+    <div class="form-group">
+      <label>Nombre del negocio</label>
+      <input type="text" id="cfg-negocio" placeholder="Mi Negocio"/>
+    </div>
+    <div class="form-group">
+      <label>Servicios (uno por línea)</label>
+      <textarea id="cfg-servicios" rows="5" placeholder="Manicure&#10;Pedicure&#10;Acrílicas&#10;Diseño especial&#10;Consulta inicial"></textarea>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-modal-cancel" onclick="cerrarConfig()">Cancelar</button>
+      <button class="btn-modal-ok" onclick="guardarConfig()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CONFIG LOCAL ──
+let CFG = {
+  url: '',
+  negocio: 'Mi Negocio',
+  servicios: ['Consulta', 'Servicio 1', 'Servicio 2', 'Servicio 3'],
+};
+
+function cargarCFG() {
+  const saved = localStorage.getItem('agenda_cfg');
+  if (saved) CFG = { ...CFG, ...JSON.parse(saved) };
+  document.getElementById('negocio-label').textContent = CFG.negocio;
+}
+
+function abrirConfig() {
+  document.getElementById('cfg-url').value = CFG.url;
+  document.getElementById('cfg-negocio').value = CFG.negocio;
+  document.getElementById('cfg-servicios').value = CFG.servicios.join('\n');
+  document.getElementById('modal-config').classList.add('visible');
+}
+
+function cerrarConfig() {
+  document.getElementById('modal-config').classList.remove('visible');
+}
+
+function guardarConfig() {
+  CFG.url = document.getElementById('cfg-url').value.trim();
+  CFG.negocio = document.getElementById('cfg-negocio').value.trim() || 'Mi Negocio';
+  CFG.servicios = document.getElementById('cfg-servicios').value.split('\n').map(s => s.trim()).filter(Boolean);
+  localStorage.setItem('agenda_cfg', JSON.stringify(CFG));
+  document.getElementById('negocio-label').textContent = CFG.negocio;
+  cerrarConfig();
+  cargarSlots();
+}
+
+// ── ESTADO ──
+let offsetSemana = 0;
+let slotsData = [];
+let slotActivo = null;
+
+// ── API ──
+async function api(method, body) {
+  if (!CFG.url) { toast('Configura la URL del Apps Script primero', 'err'); return null; }
+  try {
+    const opts = { method, headers: { 'Content-Type': 'application/json' } };
+    if (body) opts.body = JSON.stringify(body);
+    const url = method === 'GET' ? `${CFG.url}?semana=${offsetSemana}` : CFG.url;
+    const r = await fetch(url, opts);
+    return await r.json();
+  } catch (e) {
+    toast('Error de conexión: ' + e.message, 'err');
+    return null;
+  }
+}
+
+// ── CARGAR SLOTS ──
+async function cargarSlots() {
+  const lista = document.getElementById('lista-slots');
+  lista.innerHTML = '<div style="padding:24px;text-align:center;color:var(--text3);font-size:13px"><div class="spinner" style="margin:0 auto 12px"></div><br>Cargando...</div>';
+
+  if (!CFG.url) {
+    lista.innerHTML = '<div style="padding:20px;color:var(--text3);font-size:13px;text-align:center">Configura la URL del Apps Script para comenzar.</div>';
+    return;
+  }
+
+  const data = await api('GET');
+  if (!data || !data.ok) {
+    lista.innerHTML = '<div style="padding:20px;color:var(--ocupado-text);font-size:13px">Error cargando slots. Verifica la URL.</div>';
+    return;
+  }
+
+  slotsData = data.slots || [];
+  renderSlots();
+}
+
+function renderSlots() {
+  const libres = slotsData.filter(s => s.estado === 'libre').length;
+  const ocupados = slotsData.filter(s => s.estado === 'ocupado').length;
+  const bloqueados = slotsData.filter(s => s.estado === 'bloqueado').length;
+
+  document.getElementById('stat-libres').textContent = libres;
+  document.getElementById('stat-citas').textContent = ocupados;
+  document.getElementById('stat-bloqueados').textContent = bloqueados;
+
+  // Agrupar por día
+  const porDia = {};
+  for (const s of slotsData) {
+    const d = s.fechaTexto;
+    if (!porDia[d]) porDia[d] = [];
+    porDia[d].push(s);
+  }
+
+  // Semana label
+  if (slotsData.length > 0) {
+    const primero = new Date(slotsData[0].inicio);
+    const ultimo = new Date(slotsData[slotsData.length - 1].inicio);
+    document.getElementById('semana-label').textContent =
+      `${primero.getDate()}/${primero.getMonth()+1} — ${ultimo.getDate()}/${ultimo.getMonth()+1}`;
+  } else {
+    document.getElementById('semana-label').textContent = `Semana ${offsetSemana >= 0 ? '+' : ''}${offsetSemana}`;
+  }
+
+  const hoyStr = new Date().toDateString();
+  let html = '';
+
+  for (const [diaTexto, slots] of Object.entries(porDia)) {
+    const esHoy = new Date(slots[0].inicio).toDateString() === hoyStr;
+    html += `<div class="dia-group">
+      <div class="dia-header ${esHoy ? 'hoy' : ''}">${diaTexto}${esHoy ? ' · hoy' : ''}</div>`;
+
+    for (const s of slots) {
+      const activo = slotActivo && slotActivo.id === s.id ? 'activo' : '';
+      const nombre = s.estado === 'libre' ? '' :
+                     s.estado === 'bloqueado' ? s.titulo || 'Bloqueado' : s.titulo || '—';
+      html += `<div class="slot ${activo}" onclick="seleccionarSlot('${s.id}')">
+        <span class="slot-hora">${s.horaTexto}</span>
+        <div class="slot-info">
+          <div class="slot-nombre">${nombre || '—'}</div>
+        </div>
+        <span class="pill ${s.estado}">${s.estado}</span>
+      </div>`;
+    }
+    html += '</div>';
+  }
+
+  if (!html) html = '<div style="padding:24px;text-align:center;color:var(--text3);font-size:13px">Sin slots en esta semana.</div>';
+
+  document.getElementById('lista-slots').innerHTML = html;
+}
+
+// ── SELECCIONAR SLOT ──
+function seleccionarSlot(id) {
+  slotActivo = slotsData.find(s => s.id === id);
+  renderSlots();
+  renderPanel();
+}
+
+function renderPanel() {
+  const main = document.getElementById('main-panel');
+  if (!slotActivo) {
+    main.innerHTML = '<div class="empty-state"><div class="empty-icon">🗓</div><p>Selecciona un slot del panel izquierdo<br>para ver detalles o registrar una cita.</p></div>';
+    return;
+  }
+
+  const s = slotActivo;
+  const [diaNombre, diaN, mes] = s.fechaTexto.split(' ');
+
+  let contenido = `<div class="main-inner">`;
+
+  // Slot seleccionado header
+  contenido += `<div class="panel-titulo">slot seleccionado</div>
+  <div class="slot-seleccionado">
+    <div class="slot-sel-fecha">
+      <div class="slot-sel-dia">${diaN}</div>
+      <div class="slot-sel-mes">${mes}</div>
+    </div>
+    <div class="slot-sel-divider"></div>
+    <div class="slot-sel-info">
+      <div class="slot-sel-hora">${s.horaTexto}</div>
+      <div class="slot-sel-estado">${diaNombre} · <span class="pill ${s.estado}" style="font-size:11px">${s.estado}</span></div>
+    </div>
+  </div>`;
+
+  if (s.estado === 'ocupado') {
+    // Mostrar datos de la cita existente
+    contenido += renderCitaExistente(s);
+  } else if (s.estado === 'bloqueado') {
+    contenido += `<div class="cita-existente" style="border-color:var(--bloqueado-border)">
+      <div class="cita-ex-nombre" style="color:var(--text3)">🔒 ${s.titulo || 'Bloqueado'}</div>
+      <p style="font-size:13px;color:var(--text3);margin-top:8px">Este slot está bloqueado manualmente.</p>
+      <button class="btn-cancelar" style="margin-top:14px" onclick="liberarSlot('${s.evento}')">Desbloquear este slot</button>
+    </div>`;
+  } else {
+    // Formulario nueva cita
+    contenido += renderFormNuevaCita(s);
+  }
+
+  contenido += `</div>`;
+  main.innerHTML = contenido;
+}
+
+function renderCitaExistente(s) {
+  return `<div class="panel-titulo">datos de la cita</div>
+  <div class="cita-existente">
+    <div class="cita-ex-nombre">${s.titulo || '—'}</div>
+    ${s.telefono ? `<div class="cita-ex-row"><span>Tel.</span> ${s.telefono}</div>` : ''}
+    <div class="cita-ex-row"><span>Horario</span> ${s.horaTexto} · ${s.fechaTexto}</div>
+    <div class="wa-btns">
+      ${s.telefono ? `<a class="btn-wa btn-wa-cliente" href="https://wa.me/52${s.telefono.replace(/\D/g,'')}?text=${encodeURIComponent('Hola, te recordamos tu cita programada 📅')}" target="_blank">💬 WA cliente</a>` : ''}
+    </div>
+    <button class="btn-cancelar" onclick="cancelarCita('${s.evento}')">✕ Cancelar esta cita</button>
+  </div>`;
+}
+
+function renderFormNuevaCita(s) {
+  const serviciosHtml = CFG.servicios.map(sv =>
+    `<button type="button" class="servicio-chip" onclick="toggleServicio(this,'${sv}')">${sv}</button>`
+  ).join('');
+
+  return `<div class="panel-titulo">nueva cita</div>
+  <div class="form-cita">
+    <div class="form-row">
+      <div class="form-group">
+        <label>Nombre del cliente *</label>
+        <input type="text" id="f-nombre" placeholder="Nombre completo" autocomplete="off"/>
+      </div>
+      <div class="form-group">
+        <label>Teléfono *</label>
+        <input type="tel" id="f-tel" placeholder="10 dígitos" maxlength="15"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Servicio</label>
+      <div class="servicios-grid">${serviciosHtml}</div>
+    </div>
+    <div class="form-group">
+      <label>Notas adicionales</label>
+      <textarea id="f-notas" placeholder="Alergias, preferencias, referencias..."></textarea>
+    </div>
+    <button class="btn-guardar" onclick="guardarCita()">Registrar cita</button>
+  </div>
+
+  <div class="bloqueo-section">
+    <div class="panel-titulo">bloquear slot</div>
+    <div class="form-cita">
+      <div class="form-group">
+        <label>Motivo del bloqueo</label>
+        <input type="text" id="f-motivo" placeholder="Comida, permiso, mantenimiento..."/>
+      </div>
+      <button class="btn-guardar" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border2)" onclick="bloquearSlot()">Bloquear este horario</button>
+    </div>
+  </div>`;
+}
+
+// ── SERVICIOS CHIPS ──
+let servicioSeleccionado = '';
+function toggleServicio(el, srv) {
+  document.querySelectorAll('.servicio-chip').forEach(c => c.classList.remove('seleccionado'));
+  if (servicioSeleccionado === srv) { servicioSeleccionado = ''; return; }
+  el.classList.add('seleccionado');
+  servicioSeleccionado = srv;
+}
+
+// ── GUARDAR CITA ──
+async function guardarCita() {
+  const nombre = document.getElementById('f-nombre')?.value.trim();
+  const tel = document.getElementById('f-tel')?.value.trim();
+  const notas = document.getElementById('f-notas')?.value.trim();
+
+  if (!nombre || !tel) { toast('Nombre y teléfono son obligatorios', 'err'); return; }
+  if (tel.replace(/\D/g,'').length < 10) { toast('Teléfono inválido (mín. 10 dígitos)', 'err'); return; }
+
+  const btn = document.querySelector('.btn-guardar');
+  if (btn) { btn.disabled = true; btn.textContent = 'Registrando...'; }
+
+  const res = await api('POST', {
+    accion: 'crear_cita',
+    inicio: slotActivo.inicio,
+    fin: slotActivo.fin,
+    nombre, telefono: tel,
+    servicio: servicioSeleccionado || '',
+    notas,
+  });
+
+  if (!res) { if (btn) { btn.disabled = false; btn.textContent = 'Registrar cita'; } return; }
+  if (!res.ok) { toast('Error: ' + res.error, 'err'); if (btn) { btn.disabled = false; btn.textContent = 'Registrar cita'; } return; }
+
+  toast('✓ Cita registrada correctamente', 'ok');
+
+  // Abrir WA automáticamente
+  if (res.waLinkCliente) window.open(res.waLinkCliente, '_blank');
+  setTimeout(() => { if (res.waLinkNegocio) window.open(res.waLinkNegocio, '_blank'); }, 800);
+
+  await cargarSlots();
+  const nuevo = slotsData.find(s => s.inicio === slotActivo.inicio);
+  if (nuevo) { slotActivo = nuevo; renderPanel(); }
+}
+
+// ── BLOQUEAR SLOT ──
+async function bloquearSlot() {
+  const motivo = document.getElementById('f-motivo')?.value.trim() || 'No disponible';
+  const res = await api('POST', { accion: 'bloquear_slot', inicio: slotActivo.inicio, fin: slotActivo.fin, motivo });
+  if (!res || !res.ok) { toast('Error al bloquear: ' + (res?.error || 'desconocido'), 'err'); return; }
+  toast('Slot bloqueado', 'ok');
+  await cargarSlots();
+  slotActivo = slotsData.find(s => s.inicio === slotActivo.inicio);
+  renderPanel();
+}
+
+// ── LIBERAR / CANCELAR ──
+async function liberarSlot(eventoId) {
+  if (!confirm('¿Desbloquear este slot?')) return;
+  const res = await api('POST', { accion: 'cancelar_cita', eventoId });
+  if (!res || !res.ok) { toast('Error: ' + (res?.error || ''), 'err'); return; }
+  toast('Slot liberado', 'ok');
+  await cargarSlots();
+  const s = slotsData.find(s => s.inicio === slotActivo.inicio);
+  slotActivo = s || null;
+  renderPanel();
+}
+
+async function cancelarCita(eventoId) {
+  if (!confirm('¿Cancelar esta cita? Se eliminará del calendario.')) return;
+  const res = await api('POST', { accion: 'cancelar_cita', eventoId });
+  if (!res || !res.ok) { toast('Error: ' + (res?.error || ''), 'err'); return; }
+  toast('Cita cancelada', 'ok');
+  await cargarSlots();
+  const s = slotsData.find(s => s.inicio === slotActivo.inicio);
+  slotActivo = s || null;
+  renderPanel();
+}
+
+// ── NAVEGACIÓN SEMANA ──
+function cambiarSemana(delta) {
+  offsetSemana += delta;
+  slotActivo = null;
+  cargarSlots();
+  document.getElementById('main-panel').innerHTML = '<div class="empty-state"><div class="empty-icon">🗓</div><p>Selecciona un slot del panel izquierdo.</p></div>';
+}
+
+// ── TOAST ──
+function toast(msg, tipo = 'ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `visible ${tipo}`;
+  clearTimeout(t._t);
+  t._t = setTimeout(() => { t.className = ''; }, 3000);
+}
+
+// ── INIT ──
+cargarCFG();
+if (!CFG.url) {
+  setTimeout(abrirConfig, 600);
+} else {
+  cargarSlots();
+}
+</script>
+</body>
+</html>
