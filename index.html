@@ -4,6 +4,13 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Panel de Citas</title>
+<link rel="manifest" href="./manifest.json"/>
+<meta name="theme-color" content="#c8f060"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Citas"/>
+<link rel="apple-touch-icon" href="./icon-192.png"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <style>
@@ -348,6 +355,10 @@
       <input type="text" id="cfg-negocio" placeholder="Mi Negocio"/>
     </div>
     <div class="form-group">
+      <label>Direccion / ubicacion</label>
+      <input type="text" id="cfg-direccion" placeholder="Calle, colonia, ciudad"/>
+    </div>
+    <div class="form-group">
       <label>Servicios (uno por línea)</label>
       <textarea id="cfg-servicios" rows="5" placeholder="Manicure&#10;Pedicure&#10;Acrílicas&#10;Diseño especial&#10;Consulta inicial"></textarea>
     </div>
@@ -360,21 +371,36 @@
 
 <script>
 // ── CONFIG LOCAL ──
-let CFG = {
-  url: '',
-  negocio: 'Mi Negocio',
-  servicios: ['Consulta', 'Servicio 1', 'Servicio 2', 'Servicio 3'],
+// *** EDITA ESTOS VALORES ANTES DE PUBLICAR ***
+const CFG_DEFAULT = {
+  url:       'https://script.google.com/macros/s/AKfycbz3vK8cBqnsMItovuA2Rf2AXmIxY_2WfFf_weFkGYkTotQT-BRfTIxD4oWv2fwKL2BJvA/exec',
+  negocio:   'Mi Negocio',
+  direccion: 'Calle Ejemplo 123, Ciudad',
+  servicios: [
+    'Consulta inicial',
+    'Servicio 1',
+    'Servicio 2',
+    'Servicio 3',
+    'Servicio 4',
+    'Otro',
+  ],
 };
+
+let CFG = Object.assign({}, CFG_DEFAULT);
 
 function cargarCFG() {
   const saved = localStorage.getItem('agenda_cfg');
-  if (saved) CFG = { ...CFG, ...JSON.parse(saved) };
+  if (saved) {
+    const parsed = JSON.parse(saved);
+    CFG = Object.assign({}, CFG_DEFAULT, parsed);
+  }
   document.getElementById('negocio-label').textContent = CFG.negocio;
 }
 
 function abrirConfig() {
   document.getElementById('cfg-url').value = CFG.url;
   document.getElementById('cfg-negocio').value = CFG.negocio;
+  document.getElementById('cfg-direccion').value = CFG.direccion || '';
   document.getElementById('cfg-servicios').value = CFG.servicios.join('\n');
   document.getElementById('modal-config').classList.add('visible');
 }
@@ -386,6 +412,7 @@ function cerrarConfig() {
 function guardarConfig() {
   CFG.url = document.getElementById('cfg-url').value.trim();
   CFG.negocio = document.getElementById('cfg-negocio').value.trim() || 'Mi Negocio';
+  CFG.direccion = document.getElementById('cfg-direccion').value.trim() || '';
   CFG.servicios = document.getElementById('cfg-servicios').value.split('\n').map(s => s.trim()).filter(Boolean);
   localStorage.setItem('agenda_cfg', JSON.stringify(CFG));
   document.getElementById('negocio-label').textContent = CFG.negocio;
@@ -568,6 +595,12 @@ function renderFormNuevaCita(s) {
         <input type="tel" id="f-tel" placeholder="10 dígitos" maxlength="15"/>
       </div>
     </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Email del cliente</label>
+        <input type="email" id="f-email" placeholder="correo@ejemplo.com (opcional)"/>
+      </div>
+    </div>
     <div class="form-group">
       <label>Servicio</label>
       <div class="servicios-grid">${serviciosHtml}</div>
@@ -605,6 +638,7 @@ async function guardarCita() {
   const nombre = document.getElementById('f-nombre')?.value.trim();
   const tel = document.getElementById('f-tel')?.value.trim();
   const notas = document.getElementById('f-notas')?.value.trim();
+  const email = document.getElementById('f-email')?.value.trim() || '';
 
   if (!nombre || !tel) { toast('Nombre y telefono son obligatorios', 'err'); return; }
   if (tel.replace(/\D/g,'').length < 10) { toast('Telefono invalido (min. 10 digitos)', 'err'); return; }
@@ -618,6 +652,7 @@ async function guardarCita() {
     fin: slotActivo.fin,
     nombre: nombre,
     telefono: tel,
+    email: email,
     servicio: servicioSeleccionado || '',
     notas: notas || '',
   });
@@ -642,6 +677,7 @@ async function guardarCita() {
         '<div class="cita-ex-nombre" style="color:var(--libre-text)">Cita confirmada en Google Calendar</div>' +
         '<div class="cita-ex-row" style="margin-top:10px"><span>Cliente</span> ' + (c.nombre||nombre) + '</div>' +
         '<div class="cita-ex-row"><span>Tel.</span> ' + (c.telefono||tel) + '</div>' +
+        (c.email ? '<div class="cita-ex-row"><span>Email</span> ' + c.email + (res.emailEnviado ? ' ✓ enviado' : '') + '</div>' : '') +
         '<div class="cita-ex-row"><span>Hora</span> ' + (c.fechaTexto||'') + ' ' + (c.horaTexto||'') + '</div>' +
         (c.servicio ? '<div class="cita-ex-row"><span>Servicio</span> ' + c.servicio + '</div>' : '') +
       '</div>' +
@@ -716,11 +752,41 @@ function toast(msg, tipo = 'ok') {
 
 // ── INIT ──
 cargarCFG();
-if (!CFG.url) {
+const urlPrecargada = CFG_DEFAULT.url.includes('TU_ID_AQUI') ? false : CFG.url;
+if (!CFG.url || CFG.url.includes('TU_ID_AQUI')) {
   setTimeout(abrirConfig, 600);
 } else {
   cargarSlots();
 }
+
+// ── PWA: registrar service worker ──
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(e => console.log('SW:', e));
+  });
+}
+
+// ── PWA: banner de instalacion ──
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  // Mostrar boton instalar en header
+  const btn = document.createElement('button');
+  btn.className = 'btn-config';
+  btn.textContent = '📲 Instalar app';
+  btn.style.background = '#1a2a05';
+  btn.style.borderColor = '#4a7a10';
+  btn.style.color = '#a8e840';
+  btn.onclick = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') btn.remove();
+    deferredPrompt = null;
+  };
+  document.querySelector('.header-right').prepend(btn);
+});
 </script>
 </body>
 </html>
