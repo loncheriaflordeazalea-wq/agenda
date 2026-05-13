@@ -606,39 +606,67 @@ async function guardarCita() {
   const tel = document.getElementById('f-tel')?.value.trim();
   const notas = document.getElementById('f-notas')?.value.trim();
 
-  if (!nombre || !tel) { toast('Nombre y teléfono son obligatorios', 'err'); return; }
-  if (tel.replace(/\D/g,'').length < 10) { toast('Teléfono inválido (mín. 10 dígitos)', 'err'); return; }
+  if (!nombre || !tel) { toast('Nombre y telefono son obligatorios', 'err'); return; }
+  if (tel.replace(/\D/g,'').length < 10) { toast('Telefono invalido (min. 10 digitos)', 'err'); return; }
 
   const btn = document.querySelector('.btn-guardar');
   if (btn) { btn.disabled = true; btn.textContent = 'Registrando...'; }
 
-  const res = await api('POST', {
+  const res = await api({
     accion: 'crear_cita',
     inicio: slotActivo.inicio,
     fin: slotActivo.fin,
-    nombre, telefono: tel,
+    nombre: nombre,
+    telefono: tel,
     servicio: servicioSeleccionado || '',
-    notas,
+    notas: notas || '',
   });
 
-  if (!res) { if (btn) { btn.disabled = false; btn.textContent = 'Registrar cita'; } return; }
-  if (!res.ok) { toast('Error: ' + res.error, 'err'); if (btn) { btn.disabled = false; btn.textContent = 'Registrar cita'; } return; }
+  if (btn) { btn.disabled = false; btn.textContent = 'Registrar cita'; }
+  if (!res) return;
+  if (!res.ok) { toast('Error: ' + (res.error || 'desconocido'), 'err'); return; }
 
-  toast('✓ Cita registrada correctamente', 'ok');
+  toast('Cita registrada en Calendar', 'ok');
 
-  // Abrir WA automáticamente
-  if (res.waLinkCliente) window.open(res.waLinkCliente, '_blank');
-  setTimeout(() => { if (res.waLinkNegocio) window.open(res.waLinkNegocio, '_blank'); }, 800);
+  // Construir links WA localmente con los textos que devuelve el script
+  if (res.msgCliente && res.telCliente) {
+    const urlCliente = 'https://wa.me/52' + res.telCliente.replace(/\D/g,'') + '?text=' + encodeURIComponent(res.msgCliente);
+    const urlNegocio = 'https://wa.me/' + res.telNegocio + '?text=' + encodeURIComponent(res.msgNegocio);
+
+    // Mostrar panel de confirmacion con botones WA
+    const main = document.getElementById('main-panel');
+    const c = res.cita || {};
+    main.innerHTML = '<div class="main-inner">' +
+      '<div class="panel-titulo">cita registrada</div>' +
+      '<div class="cita-existente" style="border-color:var(--libre-border);margin-bottom:20px">' +
+        '<div class="cita-ex-nombre" style="color:var(--libre-text)">Cita confirmada en Google Calendar</div>' +
+        '<div class="cita-ex-row" style="margin-top:10px"><span>Cliente</span> ' + (c.nombre||nombre) + '</div>' +
+        '<div class="cita-ex-row"><span>Tel.</span> ' + (c.telefono||tel) + '</div>' +
+        '<div class="cita-ex-row"><span>Hora</span> ' + (c.fechaTexto||'') + ' ' + (c.horaTexto||'') + '</div>' +
+        (c.servicio ? '<div class="cita-ex-row"><span>Servicio</span> ' + c.servicio + '</div>' : '') +
+      '</div>' +
+      '<div class="panel-titulo">enviar whatsapp</div>' +
+      '<p style="font-size:12px;color:var(--text3);margin-bottom:12px">Haz clic en cada boton — se abre WhatsApp con el mensaje listo para enviar.</p>' +
+      '<div class="wa-btns">' +
+        '<a class="btn-wa btn-wa-cliente" href="' + urlCliente + '" target="_blank">Confirmar al cliente</a>' +
+        '<a class="btn-wa btn-wa-negocio" href="' + urlNegocio + '" target="_blank">Notificarme a mi</a>' +
+      '</div>' +
+    '</div>';
+
+    slotActivo = null;
+    await cargarSlots();
+    return;
+  }
 
   await cargarSlots();
-  const nuevo = slotsData.find(s => s.inicio === slotActivo.inicio);
+  const nuevo = slotsData.find(s => s.inicio === slotActivo?.inicio);
   if (nuevo) { slotActivo = nuevo; renderPanel(); }
 }
 
 // ── BLOQUEAR SLOT ──
 async function bloquearSlot() {
   const motivo = document.getElementById('f-motivo')?.value.trim() || 'No disponible';
-  const res = await api('POST', { accion: 'bloquear_slot', inicio: slotActivo.inicio, fin: slotActivo.fin, motivo });
+  const res = await api({ accion: 'bloquear_slot', inicio: slotActivo.inicio, fin: slotActivo.fin, motivo: motivo });
   if (!res || !res.ok) { toast('Error al bloquear: ' + (res?.error || 'desconocido'), 'err'); return; }
   toast('Slot bloqueado', 'ok');
   await cargarSlots();
@@ -648,8 +676,8 @@ async function bloquearSlot() {
 
 // ── LIBERAR / CANCELAR ──
 async function liberarSlot(eventoId) {
-  if (!confirm('¿Desbloquear este slot?')) return;
-  const res = await api('POST', { accion: 'cancelar_cita', eventoId });
+  if (!confirm('Desbloquear este slot?')) return;
+  const res = await api({ accion: 'cancelar_cita', eventoId: eventoId });
   if (!res || !res.ok) { toast('Error: ' + (res?.error || ''), 'err'); return; }
   toast('Slot liberado', 'ok');
   await cargarSlots();
@@ -659,8 +687,8 @@ async function liberarSlot(eventoId) {
 }
 
 async function cancelarCita(eventoId) {
-  if (!confirm('¿Cancelar esta cita? Se eliminará del calendario.')) return;
-  const res = await api('POST', { accion: 'cancelar_cita', eventoId });
+  if (!confirm('Cancelar esta cita? Se eliminara del calendario.')) return;
+  const res = await api({ accion: 'cancelar_cita', eventoId: eventoId });
   if (!res || !res.ok) { toast('Error: ' + (res?.error || ''), 'err'); return; }
   toast('Cita cancelada', 'ok');
   await cargarSlots();
