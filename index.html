@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 <title>Panel de Citas</title>
 <link rel="manifest" href="./manifest.json"/>
 <meta name="theme-color" content="#c8f060"/>
@@ -14,292 +14,341 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <style>
-  :root {
-    --bg: #0f0f0f;
-    --surface: #181818;
-    --surface2: #222222;
-    --border: #2e2e2e;
-    --border2: #3a3a3a;
-    --text: #e8e8e4;
-    --text2: #888884;
-    --text3: #555552;
-    --accent: #c8f060;
-    --accent2: #a8d040;
-    --libre: #1a2a0a;
-    --libre-border: #4a7a10;
-    --libre-text: #a8e840;
-    --ocupado: #2a1a1a;
-    --ocupado-border: #7a3010;
-    --ocupado-text: #e87040;
-    --bloqueado: #1a1a1a;
-    --bloqueado-border: #383838;
-    --bloqueado-text: #666660;
-    --font: 'DM Sans', sans-serif;
-    --mono: 'DM Mono', monospace;
-    --radius: 8px;
-    --radius-lg: 14px;
-  }
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--font);
-    font-size: 14px;
-    min-height: 100vh;
-  }
+:root {
+  --bg:       #0f0f0f;
+  --surface:  #181818;
+  --s2:       #222;
+  --s3:       #2a2a2a;
+  --border:   #2e2e2e;
+  --b2:       #3a3a3a;
+  --text:     #e8e8e4;
+  --t2:       #888884;
+  --t3:       #555552;
+  --accent:   #c8f060;
+  --a2:       #a8d040;
+  --green:    #1a2a0a;
+  --gb:       #4a7a10;
+  --gt:       #a8e840;
+  --red:      #2a1a1a;
+  --rb:       #7a3010;
+  --rt:       #e87040;
+  --gray:     #1a1a1a;
+  --grb:      #383838;
+  --grt:      #666660;
+  --r:        8px;
+  --rl:       14px;
+  --font:     'DM Sans', sans-serif;
+  --mono:     'DM Mono', monospace;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bot: env(safe-area-inset-bottom, 0px);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overflow: hidden; }
+body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 14px; }
 
-  /* ── HEADER ── */
-  header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 18px 24px;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface);
-    position: sticky; top: 0; z-index: 100;
-  }
-  .logo {
-    font-family: var(--mono);
-    font-size: 13px;
-    color: var(--accent);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-  .logo span { color: var(--text2); }
-  .header-right { display: flex; align-items: center; gap: 12px; }
-  .btn-config {
-    background: none; border: 1px solid var(--border2); color: var(--text2);
-    padding: 6px 14px; border-radius: var(--radius); cursor: pointer;
-    font-family: var(--font); font-size: 13px; transition: all .15s;
-  }
-  .btn-config:hover { border-color: var(--accent); color: var(--accent); }
+/* ── HEADER ── */
+header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; padding-top: calc(12px + var(--safe-top));
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+  gap: 8px;
+}
+.logo { font-family: var(--mono); font-size: 12px; color: var(--accent); letter-spacing: .08em; white-space: nowrap; }
+.logo span { color: var(--t2); }
+.header-right { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.h-negocio { font-size: 12px; color: var(--t2); display: none; }
+@media (min-width: 400px) { .h-negocio { display: block; } }
+.btn-sm {
+  background: none; border: 1px solid var(--b2); color: var(--t2);
+  padding: 5px 10px; border-radius: var(--r); cursor: pointer;
+  font-family: var(--font); font-size: 12px; white-space: nowrap;
+  transition: all .15s;
+}
+.btn-sm:hover, .btn-sm:active { border-color: var(--accent); color: var(--accent); }
+.btn-install { background: var(--green); border-color: var(--gb); color: var(--gt); display: none; }
+.btn-install.visible { display: block; }
 
-  /* ── LAYOUT ── */
-  .app { display: flex; height: calc(100vh - 57px); }
+/* ── BODY LAYOUT ── */
+/* Mobile: columna única — lista arriba, detalle abajo (o viceversa con drawer)  */
+/* Desktop ≥768: dos columnas */
+.app-body {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  padding-top: calc(48px + var(--safe-top));
+  padding-bottom: var(--safe-bot);
+  display: flex;
+  overflow: hidden;
+}
 
-  /* ── SIDEBAR ── */
-  aside {
-    width: 300px; min-width: 300px;
-    background: var(--surface);
-    border-right: 1px solid var(--border);
-    display: flex; flex-direction: column;
-    overflow: hidden;
-  }
-  .semana-nav {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 16px 18px;
-    border-bottom: 1px solid var(--border);
-  }
-  .semana-label { font-family: var(--mono); font-size: 12px; color: var(--text2); letter-spacing: .06em; }
-  .nav-btn {
-    background: none; border: 1px solid var(--border2); color: var(--text2);
-    width: 28px; height: 28px; border-radius: 6px; cursor: pointer;
-    font-size: 16px; display: flex; align-items: center; justify-content: center;
-    transition: all .15s; line-height: 1;
-  }
-  .nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+/* ── PANEL IZQUIERDO (lista) ── */
+.panel-lista {
+  width: 100%;
+  display: flex; flex-direction: column;
+  background: var(--surface);
+  overflow: hidden;
+  transition: transform .3s ease;
+}
+@media (min-width: 768px) {
+  .panel-lista { width: 280px; min-width: 280px; border-right: 1px solid var(--border); }
+}
 
-  .stats {
-    display: flex; gap: 0;
-    border-bottom: 1px solid var(--border);
-  }
-  .stat {
-    flex: 1; padding: 12px 14px; text-align: center;
-    border-right: 1px solid var(--border);
-  }
-  .stat:last-child { border-right: none; }
-  .stat-n { font-family: var(--mono); font-size: 20px; font-weight: 500; color: var(--accent); }
-  .stat-l { font-size: 11px; color: var(--text3); margin-top: 2px; }
+/* Cuando hay slot activo en móvil, ocultar lista y mostrar detalle */
+.app-body.detalle-activo .panel-lista {
+  display: none;
+}
+@media (min-width: 768px) {
+  .app-body.detalle-activo .panel-lista { display: flex; }
+}
 
-  .dias-list { overflow-y: auto; flex: 1; }
-  .dia-group {}
-  .dia-header {
-    padding: 10px 18px 6px;
-    font-family: var(--mono); font-size: 11px; color: var(--text3);
-    letter-spacing: .08em; text-transform: uppercase;
-    position: sticky; top: 0; background: var(--surface); z-index: 10;
-    border-bottom: 1px solid var(--border);
-  }
-  .dia-header.hoy { color: var(--accent); }
-  .slot {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 18px; cursor: pointer; border-bottom: 1px solid var(--border);
-    transition: background .1s;
-    gap: 10px;
-  }
-  .slot:hover { background: var(--surface2); }
-  .slot.activo { background: var(--surface2); border-left: 3px solid var(--accent); }
-  .slot-hora { font-family: var(--mono); font-size: 12px; color: var(--text2); min-width: 58px; }
-  .slot-info { flex: 1; min-width: 0; }
-  .slot-nombre { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .slot-servicio { font-size: 11px; color: var(--text3); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .pill {
-    font-size: 10px; font-family: var(--mono); padding: 2px 8px; border-radius: 20px;
-    border: 1px solid; white-space: nowrap; text-transform: uppercase; letter-spacing: .04em;
-  }
-  .pill.libre { background: var(--libre); border-color: var(--libre-border); color: var(--libre-text); }
-  .pill.ocupado { background: var(--ocupado); border-color: var(--ocupado-border); color: var(--ocupado-text); }
-  .pill.bloqueado { background: var(--bloqueado); border-color: var(--bloqueado-border); color: var(--bloqueado-text); }
+/* ── SEMANA NAV ── */
+.semana-nav {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.semana-label { font-family: var(--mono); font-size: 11px; color: var(--t2); letter-spacing: .06em; }
+.nav-btn {
+  background: none; border: 1px solid var(--b2); color: var(--t2);
+  width: 30px; height: 30px; border-radius: 6px; cursor: pointer;
+  font-size: 16px; display: flex; align-items: center; justify-content: center;
+  transition: all .15s;
+}
+.nav-btn:hover { border-color: var(--accent); color: var(--accent); }
 
-  /* ── MAIN ── */
-  main {
-    flex: 1; overflow-y: auto;
-    display: flex; flex-direction: column;
-  }
-  .main-inner {
-    max-width: 560px; margin: 0 auto; padding: 32px 24px;
-    width: 100%;
-  }
+/* ── STATS ── */
+.stats { display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.stat { flex: 1; padding: 10px 8px; text-align: center; border-right: 1px solid var(--border); }
+.stat:last-child { border-right: none; }
+.stat-n { font-family: var(--mono); font-size: 18px; font-weight: 500; color: var(--accent); }
+.stat-n.red { color: var(--rt); }
+.stat-n.gray { color: var(--grt); }
+.stat-l { font-size: 10px; color: var(--t3); margin-top: 2px; }
 
-  .empty-state {
-    flex: 1; display: flex; flex-direction: column; align-items: center;
-    justify-content: center; color: var(--text3); text-align: center;
-    padding: 60px 24px;
-  }
-  .empty-icon { font-size: 40px; margin-bottom: 16px; opacity: .4; }
-  .empty-state p { font-size: 13px; line-height: 1.6; }
+/* ── LISTA SLOTS ── */
+.slots-scroll { overflow-y: auto; flex: 1; -webkit-overflow-scrolling: touch; }
+.dia-header {
+  padding: 8px 14px 5px; font-family: var(--mono); font-size: 10px; color: var(--t3);
+  letter-spacing: .08em; text-transform: uppercase;
+  position: sticky; top: 0; background: var(--surface); z-index: 10;
+  border-bottom: 1px solid var(--border);
+}
+.dia-header.hoy { color: var(--accent); }
+.slot {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 11px 14px; cursor: pointer; border-bottom: 1px solid var(--border);
+  gap: 8px; transition: background .1s; min-height: 52px;
+}
+.slot:active { background: var(--s2); }
+@media (min-width: 768px) {
+  .slot:hover { background: var(--s2); }
+  .slot.activo { background: var(--s2); border-left: 3px solid var(--accent); }
+}
+.slot-hora { font-family: var(--mono); font-size: 12px; color: var(--t2); min-width: 56px; flex-shrink: 0; }
+.slot-nombre { font-size: 13px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pill {
+  font-size: 10px; font-family: var(--mono); padding: 3px 8px; border-radius: 20px;
+  border: 1px solid; white-space: nowrap; text-transform: uppercase;
+  letter-spacing: .04em; flex-shrink: 0;
+}
+.pill.libre    { background: var(--green); border-color: var(--gb); color: var(--gt); }
+.pill.ocupado  { background: var(--red);   border-color: var(--rb); color: var(--rt); }
+.pill.bloqueado{ background: var(--gray);  border-color: var(--grb);color: var(--grt);}
 
-  /* ── PANEL DE CITA ── */
-  .panel-titulo {
-    font-family: var(--mono); font-size: 11px; color: var(--text3);
-    letter-spacing: .1em; text-transform: uppercase; margin-bottom: 20px;
-    display: flex; align-items: center; gap: 10px;
-  }
-  .panel-titulo::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+/* ── PANEL DETALLE ── */
+.panel-detalle {
+  display: none;
+  flex-direction: column;
+  width: 100%;
+  overflow: hidden;
+}
+.app-body.detalle-activo .panel-detalle { display: flex; }
+@media (min-width: 768px) {
+  .panel-detalle { display: flex; flex: 1; }
+}
 
-  .slot-seleccionado {
-    background: var(--surface); border: 1px solid var(--border2);
-    border-radius: var(--radius-lg); padding: 18px; margin-bottom: 24px;
-    display: flex; align-items: center; gap: 16px;
-  }
-  .slot-sel-fecha { text-align: center; }
-  .slot-sel-dia { font-family: var(--mono); font-size: 22px; font-weight: 500; color: var(--accent); line-height: 1; }
-  .slot-sel-mes { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: .06em; margin-top: 2px; }
-  .slot-sel-divider { width: 1px; height: 40px; background: var(--border); }
-  .slot-sel-info { flex: 1; }
-  .slot-sel-hora { font-family: var(--mono); font-size: 18px; color: var(--text); }
-  .slot-sel-estado { font-size: 12px; color: var(--text3); margin-top: 3px; }
+/* Barra de navegación de regreso (solo móvil) */
+.detalle-topbar {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+  background: var(--surface); flex-shrink: 0;
+}
+@media (min-width: 768px) { .detalle-topbar { display: none; } }
+.btn-back {
+  background: none; border: 1px solid var(--b2); color: var(--t2);
+  padding: 5px 12px; border-radius: var(--r); cursor: pointer;
+  font-family: var(--font); font-size: 12px; display: flex; align-items: center; gap: 4px;
+}
+.detalle-topbar-info { font-size: 13px; color: var(--text); font-weight: 500; }
+.detalle-topbar-sub  { font-size: 11px; color: var(--t3); margin-left: auto; font-family: var(--mono); }
 
-  /* Cita ya registrada */
-  .cita-existente {
-    background: var(--surface); border: 1px solid var(--ocupado-border);
-    border-radius: var(--radius-lg); padding: 20px; margin-bottom: 24px;
-  }
-  .cita-ex-nombre { font-size: 18px; font-weight: 500; margin-bottom: 8px; }
-  .cita-ex-row { display: flex; gap: 6px; align-items: center; font-size: 13px; color: var(--text2); margin-bottom: 4px; }
-  .cita-ex-row span { color: var(--text3); }
-  .wa-btns { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
-  .btn-wa {
-    flex: 1; min-width: 140px; padding: 10px 16px; border-radius: var(--radius);
-    border: none; cursor: pointer; font-family: var(--font); font-size: 13px;
-    font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 8px;
-    text-decoration: none; transition: opacity .15s;
-  }
-  .btn-wa:hover { opacity: .85; }
-  .btn-wa-cliente { background: #1a4a1a; color: #6be86b; border: 1px solid #2a7a2a; }
-  .btn-wa-negocio { background: #1a3a4a; color: #6bb4e8; border: 1px solid #2a5a7a; }
-  .btn-cancelar {
-    width: 100%; margin-top: 10px; padding: 10px; border-radius: var(--radius);
-    background: none; border: 1px solid var(--ocupado-border); color: var(--ocupado-text);
-    cursor: pointer; font-family: var(--font); font-size: 13px; transition: all .15s;
-  }
-  .btn-cancelar:hover { background: var(--ocupado); }
+.detalle-scroll {
+  flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  padding: 20px 16px 32px;
+}
+@media (min-width: 768px) { .detalle-scroll { padding: 28px 24px 40px; } }
+.detalle-inner { max-width: 520px; margin: 0 auto; }
 
-  /* Formulario nueva cita */
-  .form-cita { display: flex; flex-direction: column; gap: 14px; }
-  .form-row { display: flex; gap: 14px; }
-  .form-group { display: flex; flex-direction: column; gap: 6px; flex: 1; }
-  .form-group label { font-size: 11px; color: var(--text3); letter-spacing: .06em; text-transform: uppercase; font-family: var(--mono); }
-  .form-group input,
-  .form-group select,
-  .form-group textarea {
-    background: var(--surface); border: 1px solid var(--border2);
-    color: var(--text); padding: 10px 13px; border-radius: var(--radius);
-    font-family: var(--font); font-size: 14px; transition: border-color .15s;
-    outline: none;
-  }
-  .form-group input:focus,
-  .form-group select:focus,
-  .form-group textarea:focus { border-color: var(--accent); }
-  .form-group select option { background: #222; }
-  .form-group textarea { resize: vertical; min-height: 70px; }
+/* Slot header en detalle */
+.slot-card {
+  background: var(--s2); border: 1px solid var(--b2);
+  border-radius: var(--rl); padding: 16px; margin-bottom: 20px;
+  display: flex; align-items: center; gap: 14px;
+}
+.slot-card-fecha { text-align: center; flex-shrink: 0; }
+.slot-card-dia  { font-family: var(--mono); font-size: 26px; font-weight: 500; color: var(--accent); line-height: 1; }
+.slot-card-mes  { font-size: 10px; color: var(--t3); text-transform: uppercase; letter-spacing: .06em; margin-top: 2px; }
+.slot-card-div  { width: 1px; height: 44px; background: var(--border); flex-shrink: 0; }
+.slot-card-info { flex: 1; min-width: 0; }
+.slot-card-hora { font-family: var(--mono); font-size: 20px; color: var(--text); }
+.slot-card-sub  { font-size: 12px; color: var(--t3); margin-top: 3px; display: flex; align-items: center; gap: 6px; }
 
-  .servicios-grid {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
-  }
-  .servicio-chip {
-    padding: 9px 12px; border-radius: var(--radius); border: 1px solid var(--border2);
-    background: none; color: var(--text2); cursor: pointer; font-family: var(--font);
-    font-size: 12px; text-align: center; transition: all .15s;
-  }
-  .servicio-chip:hover { border-color: var(--accent); color: var(--accent); }
-  .servicio-chip.seleccionado { background: #1a2a05; border-color: var(--libre-border); color: var(--libre-text); }
+/* Seccion titulo */
+.sec-title {
+  font-family: var(--mono); font-size: 10px; color: var(--t3);
+  letter-spacing: .1em; text-transform: uppercase; margin-bottom: 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.sec-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
-  .btn-guardar {
-    background: var(--accent); color: #0f0f0f; border: none; padding: 13px;
-    border-radius: var(--radius); font-family: var(--font); font-size: 14px; font-weight: 600;
-    cursor: pointer; transition: background .15s; margin-top: 6px;
-  }
-  .btn-guardar:hover { background: var(--accent2); }
-  .btn-guardar:disabled { opacity: .4; cursor: not-allowed; }
+/* Datos cita existente */
+.cita-card {
+  background: var(--s2); border: 1px solid var(--rb);
+  border-radius: var(--rl); padding: 16px; margin-bottom: 16px;
+}
+.cita-nombre { font-size: 17px; font-weight: 500; margin-bottom: 10px; }
+.cita-row { display: flex; gap: 8px; font-size: 13px; color: var(--t2); margin-bottom: 5px; align-items: flex-start; }
+.cita-row span { color: var(--t3); flex-shrink: 0; min-width: 68px; }
 
-  /* Bloqueo */
-  .bloqueo-section {
-    margin-top: 24px;
-    border-top: 1px solid var(--border);
-    padding-top: 20px;
-  }
+/* Botones WA */
+.wa-grid { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+.btn-wa {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 13px 16px; border-radius: var(--r); border: 1px solid;
+  cursor: pointer; font-family: var(--font); font-size: 13px; font-weight: 500;
+  text-decoration: none; transition: opacity .15s; min-height: 48px;
+}
+.btn-wa:active { opacity: .75; }
+.btn-wa-confirmar  { background: #0d2b0d; border-color: #2a6a2a; color: #6be86b; }
+.btn-wa-recordar   { background: #0d1f2b; border-color: #1a5070; color: #60b0e0; }
+.btn-wa-yo         { background: #1a1a2b; border-color: #3a3a7a; color: #9090e0; }
+.btn-cancelar {
+  width: 100%; padding: 12px; border-radius: var(--r);
+  background: none; border: 1px solid var(--rb); color: var(--rt);
+  cursor: pointer; font-family: var(--font); font-size: 13px;
+  transition: background .15s; min-height: 44px;
+}
+.btn-cancelar:active { background: var(--red); }
 
-  /* Toast */
-  #toast {
-    position: fixed; bottom: 24px; right: 24px; z-index: 999;
-    background: var(--surface2); border: 1px solid var(--border2);
-    border-radius: var(--radius-lg); padding: 14px 20px;
-    font-size: 13px; color: var(--text);
-    transform: translateY(80px); opacity: 0; transition: all .3s;
-    max-width: 320px; pointer-events: none;
-  }
-  #toast.visible { transform: translateY(0); opacity: 1; }
-  #toast.ok { border-color: var(--libre-border); }
-  #toast.err { border-color: var(--ocupado-border); }
+/* Formulario nueva cita */
+.form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.form-row { display: flex; gap: 12px; }
+.form-row .form-group { flex: 1; }
+.form-group label { font-size: 10px; color: var(--t3); letter-spacing: .06em; text-transform: uppercase; font-family: var(--mono); }
+.form-group input,
+.form-group textarea {
+  background: var(--s2); border: 1px solid var(--b2); color: var(--text);
+  padding: 12px 13px; border-radius: var(--r); font-family: var(--font); font-size: 14px;
+  transition: border-color .15s; outline: none; width: 100%;
+  -webkit-appearance: none;
+}
+.form-group input:focus,
+.form-group textarea:focus { border-color: var(--accent); }
+.form-group textarea { resize: vertical; min-height: 72px; }
 
-  /* Loading */
-  .loading { opacity: .5; pointer-events: none; }
-  .spinner {
-    display: inline-block; width: 14px; height: 14px;
-    border: 2px solid var(--border2); border-top-color: var(--accent);
-    border-radius: 50%; animation: spin .6s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
+/* Grid servicios */
+.servicios-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+@media (min-width: 480px) { .servicios-grid { grid-template-columns: repeat(3, 1fr); } }
+.chip {
+  padding: 11px 8px; border-radius: var(--r); border: 1px solid var(--b2);
+  background: none; color: var(--t2); cursor: pointer; font-family: var(--font);
+  font-size: 12px; text-align: center; transition: all .15s; min-height: 44px;
+  line-height: 1.2;
+}
+.chip:active, .chip.sel { background: var(--green); border-color: var(--gb); color: var(--gt); }
 
-  /* Modal config */
-  .modal-overlay {
-    display: none; position: fixed; inset: 0; background: rgba(0,0,0,.8);
-    z-index: 200; align-items: center; justify-content: center;
-  }
-  .modal-overlay.visible { display: flex; }
-  .modal {
-    background: var(--surface); border: 1px solid var(--border2);
-    border-radius: var(--radius-lg); padding: 28px; width: 420px; max-width: 95vw;
-  }
-  .modal h3 { font-size: 16px; margin-bottom: 20px; color: var(--accent); font-family: var(--mono); }
-  .modal .form-group { margin-bottom: 14px; }
-  .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
-  .btn-modal-ok {
-    flex: 1; background: var(--accent); color: #0f0f0f; border: none;
-    padding: 11px; border-radius: var(--radius); cursor: pointer;
-    font-family: var(--font); font-weight: 600; font-size: 14px;
-  }
-  .btn-modal-cancel {
-    flex: 1; background: none; border: 1px solid var(--border2); color: var(--text2);
-    padding: 11px; border-radius: var(--radius); cursor: pointer;
-    font-family: var(--font); font-size: 14px;
-  }
+/* Botón guardar */
+.btn-primary {
+  width: 100%; background: var(--accent); color: #0f0f0f;
+  border: none; padding: 15px; border-radius: var(--r);
+  font-family: var(--font); font-size: 15px; font-weight: 600;
+  cursor: pointer; transition: background .15s; margin-top: 4px;
+  min-height: 52px;
+}
+.btn-primary:active { background: var(--a2); }
+.btn-primary:disabled { opacity: .4; cursor: not-allowed; }
+.btn-secondary {
+  width: 100%; background: var(--s3); color: var(--t2);
+  border: 1px solid var(--b2); padding: 13px; border-radius: var(--r);
+  font-family: var(--font); font-size: 13px; cursor: pointer;
+  transition: all .15s; margin-top: 8px; min-height: 48px;
+}
+.btn-secondary:active { border-color: var(--grb); }
 
-  /* Scrollbar */
-  ::-webkit-scrollbar { width: 5px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+/* Panel confirmacion */
+.confirm-card {
+  background: var(--s2); border: 1px solid var(--gb);
+  border-radius: var(--rl); padding: 16px; margin-bottom: 16px;
+}
+.confirm-titulo { font-size: 15px; font-weight: 500; color: var(--gt); margin-bottom: 10px; }
+.confirm-row { font-size: 13px; color: var(--t2); margin-bottom: 4px; display: flex; gap: 8px; }
+.confirm-row span { color: var(--t3); min-width: 64px; flex-shrink: 0; }
+
+/* Seccion bloqueo */
+.bloqueo-sep { margin: 24px 0 0; border-top: 1px solid var(--border); padding-top: 20px; }
+
+/* Empty state */
+.empty { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--t3); text-align: center; padding: 40px 24px; }
+.empty-icon { font-size: 36px; margin-bottom: 14px; opacity: .4; }
+.empty p { font-size: 13px; line-height: 1.7; }
+.empty-hint { margin-top: 12px; font-family: var(--mono); font-size: 11px; color: var(--t3); }
+
+/* Toast */
+#toast {
+  position: fixed; bottom: calc(20px + var(--safe-bot)); left: 50%; transform: translateX(-50%) translateY(80px);
+  background: var(--s2); border: 1px solid var(--b2); border-radius: var(--rl);
+  padding: 13px 20px; font-size: 13px; color: var(--text); opacity: 0;
+  transition: all .3s; z-index: 999; white-space: nowrap;
+  pointer-events: none; max-width: 90vw;
+}
+#toast.visible { transform: translateX(-50%) translateY(0); opacity: 1; }
+#toast.ok  { border-color: var(--gb); }
+#toast.err { border-color: var(--rb); }
+
+/* Loading spinner */
+.spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--b2); border-top-color: var(--accent); border-radius: 50%; animation: spin .6s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-center { padding: 40px; text-align: center; color: var(--t3); font-size: 13px; }
+
+/* Modal config */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,.85);
+  z-index: 300; align-items: flex-end; justify-content: center;
+  padding-bottom: var(--safe-bot);
+}
+@media (min-width: 480px) { .modal-overlay { align-items: center; } }
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--surface); border: 1px solid var(--b2);
+  border-radius: var(--rl) var(--rl) 0 0; padding: 24px 20px 32px;
+  width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto;
+}
+@media (min-width: 480px) { .modal { border-radius: var(--rl); } }
+.modal h3 { font-size: 14px; margin-bottom: 18px; color: var(--accent); font-family: var(--mono); letter-spacing: .06em; }
+.modal .form-group { margin-bottom: 14px; }
+.modal .form-group input,
+.modal .form-group textarea {
+  background: var(--s2); border: 1px solid var(--b2); color: var(--text);
+  padding: 12px 13px; border-radius: var(--r); font-family: var(--font); font-size: 14px;
+  outline: none; width: 100%;
+}
+.modal .form-group input:focus { border-color: var(--accent); }
+.modal-btns { display: flex; gap: 10px; margin-top: 18px; }
+.btn-modal-ok     { flex: 1; background: var(--accent); color: #0f0f0f; border: none; padding: 13px; border-radius: var(--r); cursor: pointer; font-family: var(--font); font-weight: 600; font-size: 14px; }
+.btn-modal-cancel { flex: 1; background: none; border: 1px solid var(--b2); color: var(--t2); padding: 13px; border-radius: var(--r); cursor: pointer; font-family: var(--font); font-size: 14px; }
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--b2); border-radius: 2px; }
 </style>
 </head>
 <body>
@@ -307,60 +356,71 @@
 <header>
   <div class="logo">agenda <span>/</span> panel</div>
   <div class="header-right">
-    <span id="negocio-label" style="font-size:13px;color:var(--text2)"></span>
-    <button class="btn-config" onclick="abrirConfig()">⚙ Configurar</button>
+    <span class="h-negocio" id="h-negocio"></span>
+    <button class="btn-sm btn-install" id="btn-install">Instalar app</button>
+    <button class="btn-sm" onclick="abrirConfig()">Config</button>
   </div>
 </header>
 
-<div class="app">
-  <aside>
+<div class="app-body" id="app-body">
+
+  <!-- LISTA -->
+  <div class="panel-lista" id="panel-lista">
     <div class="semana-nav">
-      <button class="nav-btn" onclick="cambiarSemana(-1)">‹</button>
+      <button class="nav-btn" onclick="cambiarSemana(-1)">&#8249;</button>
       <div class="semana-label" id="semana-label">Cargando...</div>
-      <button class="nav-btn" onclick="cambiarSemana(1)">›</button>
+      <button class="nav-btn" onclick="cambiarSemana(1)">&#8250;</button>
     </div>
     <div class="stats">
-      <div class="stat"><div class="stat-n" id="stat-libres">—</div><div class="stat-l">Libres</div></div>
-      <div class="stat"><div class="stat-n" id="stat-citas" style="color:var(--ocupado-text)">—</div><div class="stat-l">Citas</div></div>
-      <div class="stat"><div class="stat-n" id="stat-bloqueados" style="color:var(--text3)">—</div><div class="stat-l">Bloq.</div></div>
+      <div class="stat"><div class="stat-n" id="stat-l">—</div><div class="stat-l">Libres</div></div>
+      <div class="stat"><div class="stat-n red" id="stat-c">—</div><div class="stat-l">Citas</div></div>
+      <div class="stat"><div class="stat-n gray" id="stat-b">—</div><div class="stat-l">Bloq.</div></div>
     </div>
-    <div class="dias-list" id="lista-slots">
-      <div style="padding:24px;text-align:center;color:var(--text3);font-size:13px">
-        <div class="spinner" style="margin:0 auto 12px"></div><br>Cargando slots...
+    <div class="slots-scroll" id="slots-scroll">
+      <div class="loading-center"><div class="spinner" style="margin:0 auto 10px"></div><br>Cargando...</div>
+    </div>
+  </div>
+
+  <!-- DETALLE -->
+  <div class="panel-detalle" id="panel-detalle">
+    <div class="detalle-topbar">
+      <button class="btn-back" onclick="volverLista()">&#8592; Lista</button>
+      <span class="detalle-topbar-info" id="topbar-titulo"></span>
+      <span class="detalle-topbar-sub" id="topbar-sub"></span>
+    </div>
+    <div class="detalle-scroll">
+      <div class="detalle-inner" id="detalle-inner">
+        <div class="empty">
+          <div class="empty-icon">&#128197;</div>
+          <p>Toca un horario<br>para ver detalles o agendar</p>
+        </div>
       </div>
     </div>
-  </aside>
+  </div>
 
-  <main id="main-panel">
-    <div class="empty-state">
-      <div class="empty-icon">🗓</div>
-      <p>Selecciona un slot del panel izquierdo<br>para ver detalles o registrar una cita.</p>
-    </div>
-  </main>
 </div>
 
-<!-- Toast -->
 <div id="toast"></div>
 
-<!-- Modal de configuración -->
+<!-- Modal config -->
 <div class="modal-overlay" id="modal-config">
   <div class="modal">
-    <h3>// configuración</h3>
+    <h3>// configuracion</h3>
     <div class="form-group">
-      <label>URL del Apps Script (Web App)</label>
-      <input type="text" id="cfg-url" placeholder="https://script.google.com/macros/s/..."/>
+      <label>URL del Apps Script</label>
+      <input type="url" id="cfg-url" placeholder="https://script.google.com/macros/s/.../exec"/>
     </div>
     <div class="form-group">
       <label>Nombre del negocio</label>
       <input type="text" id="cfg-negocio" placeholder="Mi Negocio"/>
     </div>
     <div class="form-group">
-      <label>Direccion / ubicacion</label>
-      <input type="text" id="cfg-direccion" placeholder="Calle, colonia, ciudad"/>
+      <label>Direccion</label>
+      <input type="text" id="cfg-dir" placeholder="Calle, colonia, ciudad"/>
     </div>
     <div class="form-group">
-      <label>Servicios (uno por línea)</label>
-      <textarea id="cfg-servicios" rows="5" placeholder="Manicure&#10;Pedicure&#10;Acrílicas&#10;Diseño especial&#10;Consulta inicial"></textarea>
+      <label>Servicios (uno por linea)</label>
+      <textarea id="cfg-servicios" rows="5" placeholder="Consulta inicial&#10;Servicio 1&#10;Servicio 2&#10;Otro"></textarea>
     </div>
     <div class="modal-btns">
       <button class="btn-modal-cancel" onclick="cerrarConfig()">Cancelar</button>
@@ -370,455 +430,413 @@
 </div>
 
 <script>
-// ── CONFIG LOCAL ──
-// *** EDITA ESTOS VALORES ANTES DE PUBLICAR ***
-const CFG_DEFAULT = {
+// ── CONFIG PRECARGADA ── edita antes de subir a GitHub
+var CFG_DEFAULT = {
   url:       'https://script.google.com/macros/s/AKfycbz3vK8cBqnsMItovuA2Rf2AXmIxY_2WfFf_weFkGYkTotQT-BRfTIxD4oWv2fwKL2BJvA/exec',
   negocio:   'Mi Negocio',
   direccion: 'Calle Ejemplo 123, Ciudad',
-  servicios: [
-    'Servicio 1',
-    'Servicio 2',
-    'Servicio 3',
-    'Servicio 4',
-    'Otro',
-  ],
+  servicios: ['Consulta inicial','Servicio 1','Servicio 2','Servicio 3','Servicio 4','Otro'],
 };
 
-let CFG = Object.assign({}, CFG_DEFAULT);
+var CFG = Object.assign({}, CFG_DEFAULT);
 
 function cargarCFG() {
-  const saved = localStorage.getItem('agenda_cfg');
-  if (saved) {
-    const parsed = JSON.parse(saved);
-    CFG = Object.assign({}, CFG_DEFAULT, parsed);
-  }
-  document.getElementById('negocio-label').textContent = CFG.negocio;
+  try {
+    var saved = localStorage.getItem('agenda_cfg');
+    if (saved) CFG = Object.assign({}, CFG_DEFAULT, JSON.parse(saved));
+  } catch(e) {}
+  document.getElementById('h-negocio').textContent = CFG.negocio;
 }
 
 function abrirConfig() {
-  document.getElementById('cfg-url').value = CFG.url;
-  document.getElementById('cfg-negocio').value = CFG.negocio;
-  document.getElementById('cfg-direccion').value = CFG.direccion || '';
+  document.getElementById('cfg-url').value       = CFG.url;
+  document.getElementById('cfg-negocio').value   = CFG.negocio;
+  document.getElementById('cfg-dir').value       = CFG.direccion || '';
   document.getElementById('cfg-servicios').value = CFG.servicios.join('\n');
-  document.getElementById('modal-config').classList.add('visible');
+  document.getElementById('modal-config').classList.add('open');
 }
-
 function cerrarConfig() {
-  document.getElementById('modal-config').classList.remove('visible');
+  document.getElementById('modal-config').classList.remove('open');
 }
-
 function guardarConfig() {
-  CFG.url = document.getElementById('cfg-url').value.trim();
-  CFG.negocio = document.getElementById('cfg-negocio').value.trim() || 'Mi Negocio';
-  CFG.direccion = document.getElementById('cfg-direccion').value.trim() || '';
-  CFG.servicios = document.getElementById('cfg-servicios').value.split('\n').map(s => s.trim()).filter(Boolean);
+  CFG.url       = document.getElementById('cfg-url').value.trim();
+  CFG.negocio   = document.getElementById('cfg-negocio').value.trim() || 'Mi Negocio';
+  CFG.direccion = document.getElementById('cfg-dir').value.trim();
+  CFG.servicios = document.getElementById('cfg-servicios').value.split('\n').map(function(s){ return s.trim(); }).filter(Boolean);
   localStorage.setItem('agenda_cfg', JSON.stringify(CFG));
-  document.getElementById('negocio-label').textContent = CFG.negocio;
+  document.getElementById('h-negocio').textContent = CFG.negocio;
   cerrarConfig();
   cargarSlots();
 }
 
 // ── ESTADO ──
-let offsetSemana = 0;
-let slotsData = [];
-let slotActivo = null;
+var offsetSemana = 0;
+var slotsData    = [];
+var slotActivo   = null;
+var servicioSel  = '';
 
-// ── API — todo GET para evitar CORS en Apps Script ──
-async function api(params) {
-  if (!CFG.url) { toast('Configura la URL del Apps Script primero', 'err'); return null; }
-  try {
-    const qs = new URLSearchParams(params).toString();
-    const r = await fetch(`${CFG.url}?${qs}`);
-    const text = await r.text();
-    return JSON.parse(text);
-  } catch (e) {
-    toast('Error: ' + e.message, 'err');
-    return null;
+// ── MOBILE: volver a lista ──
+function volverLista() {
+  slotActivo = null;
+  document.getElementById('app-body').classList.remove('detalle-activo');
+  renderSlots(); // quitar activo highlight
+}
+
+// ── API ──
+function api(params, cb) {
+  if (!CFG.url || CFG.url.includes('TU_ID_AQUI')) {
+    toast('Configura la URL del Apps Script', 'err');
+    return;
   }
+  var qs = Object.keys(params).map(function(k){
+    return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
+  }).join('&');
+  fetch(CFG.url + '?' + qs)
+    .then(function(r){ return r.text(); })
+    .then(function(t){
+      try { cb(null, JSON.parse(t)); }
+      catch(e) { cb('JSON parse error: ' + t.substr(0,100)); }
+    })
+    .catch(function(e){ cb(e.message); });
 }
 
 // ── CARGAR SLOTS ──
-async function cargarSlots() {
-  const lista = document.getElementById('lista-slots');
-  lista.innerHTML = '<div style="padding:24px;text-align:center;color:var(--text3);font-size:13px"><div class="spinner" style="margin:0 auto 12px"></div><br>Cargando...</div>';
-
-  if (!CFG.url) {
-    lista.innerHTML = '<div style="padding:20px;color:var(--text3);font-size:13px;text-align:center">Configura la URL del Apps Script para comenzar.</div>';
+function cargarSlots() {
+  var el = document.getElementById('slots-scroll');
+  el.innerHTML = '<div class="loading-center"><div class="spinner" style="margin:0 auto 10px"></div><br>Cargando...</div>';
+  if (!CFG.url || CFG.url.includes('TU_ID_AQUI')) {
+    el.innerHTML = '<div class="loading-center" style="color:var(--rt)">Configura la URL del Apps Script</div>';
     return;
   }
-
-  const data = await api({ accion: 'slots', semana: offsetSemana });
-  if (!data || !data.ok) {
-    lista.innerHTML = '<div style="padding:20px;color:var(--ocupado-text);font-size:13px">Error cargando slots. Verifica la URL.</div>';
-    return;
-  }
-
-  slotsData = data.slots || [];
-  renderSlots();
+  api({ accion: 'slots', semana: offsetSemana }, function(err, data) {
+    if (err || !data || !data.ok) {
+      el.innerHTML = '<div class="loading-center" style="color:var(--rt)">Error: ' + (err || (data && data.error) || 'desconocido') + '</div>';
+      return;
+    }
+    slotsData = data.slots || [];
+    renderSlots();
+  });
 }
 
+// ── RENDER LISTA ──
 function renderSlots() {
-  const libres = slotsData.filter(s => s.estado === 'libre').length;
-  const ocupados = slotsData.filter(s => s.estado === 'ocupado').length;
-  const bloqueados = slotsData.filter(s => s.estado === 'bloqueado').length;
-
-  document.getElementById('stat-libres').textContent = libres;
-  document.getElementById('stat-citas').textContent = ocupados;
-  document.getElementById('stat-bloqueados').textContent = bloqueados;
-
-  // Agrupar por día
-  const porDia = {};
-  for (const s of slotsData) {
-    const d = s.fechaTexto;
-    if (!porDia[d]) porDia[d] = [];
-    porDia[d].push(s);
-  }
+  var libres = 0, citas = 0, bloqs = 0;
+  slotsData.forEach(function(s){
+    if (s.estado === 'libre') libres++;
+    else if (s.estado === 'ocupado') citas++;
+    else bloqs++;
+  });
+  document.getElementById('stat-l').textContent = libres;
+  document.getElementById('stat-c').textContent = citas;
+  document.getElementById('stat-b').textContent = bloqs;
 
   // Semana label
   if (slotsData.length > 0) {
-    const primero = new Date(slotsData[0].inicio);
-    const ultimo = new Date(slotsData[slotsData.length - 1].inicio);
+    var p = new Date(slotsData[0].inicio);
+    var u = new Date(slotsData[slotsData.length-1].inicio);
     document.getElementById('semana-label').textContent =
-      `${primero.getDate()}/${primero.getMonth()+1} — ${ultimo.getDate()}/${ultimo.getMonth()+1}`;
-  } else {
-    document.getElementById('semana-label').textContent = `Semana ${offsetSemana >= 0 ? '+' : ''}${offsetSemana}`;
+      p.getDate() + '/' + (p.getMonth()+1) + ' - ' + u.getDate() + '/' + (u.getMonth()+1);
   }
 
-  const hoyStr = new Date().toDateString();
-  let html = '';
+  // Agrupar por dia
+  var grupos = {};
+  var orden  = [];
+  slotsData.forEach(function(s){
+    if (!grupos[s.fechaTexto]) { grupos[s.fechaTexto] = []; orden.push(s.fechaTexto); }
+    grupos[s.fechaTexto].push(s);
+  });
 
-  for (const [diaTexto, slots] of Object.entries(porDia)) {
-    const esHoy = new Date(slots[0].inicio).toDateString() === hoyStr;
-    html += `<div class="dia-group">
-      <div class="dia-header ${esHoy ? 'hoy' : ''}">${diaTexto}${esHoy ? ' · hoy' : ''}</div>`;
-
-    for (const s of slots) {
-      const activo = slotActivo && slotActivo.id === s.id ? 'activo' : '';
-      const nombre = s.estado === 'libre' ? '' :
-                     s.estado === 'bloqueado' ? s.titulo || 'Bloqueado' : s.titulo || '—';
-      html += `<div class="slot ${activo}" onclick="seleccionarSlot('${s.id}')">
-        <span class="slot-hora">${s.horaTexto}</span>
-        <div class="slot-info">
-          <div class="slot-nombre">${nombre || '—'}</div>
-        </div>
-        <span class="pill ${s.estado}">${s.estado}</span>
-      </div>`;
-    }
-    html += '</div>';
-  }
-
-  if (!html) html = '<div style="padding:24px;text-align:center;color:var(--text3);font-size:13px">Sin slots en esta semana.</div>';
-
-  document.getElementById('lista-slots').innerHTML = html;
+  var hoyStr = new Date().toDateString();
+  var html = '';
+  orden.forEach(function(dia){
+    var slots = grupos[dia];
+    var esHoy = new Date(slots[0].inicio).toDateString() === hoyStr;
+    html += '<div class="dia-header ' + (esHoy ? 'hoy' : '') + '">' + dia + (esHoy ? ' · HOY' : '') + '</div>';
+    slots.forEach(function(s){
+      var esActivo = slotActivo && slotActivo.id === s.id ? ' activo' : '';
+      var nombre = s.estado === 'libre' ? '' : (s.titulo || '—');
+      html += '<div class="slot' + esActivo + '" onclick="selSlot(\'' + s.id + '\')">' +
+        '<span class="slot-hora">' + s.horaTexto + '</span>' +
+        '<span class="slot-nombre">' + nombre + '</span>' +
+        '<span class="pill ' + s.estado + '">' + s.estado + '</span>' +
+      '</div>';
+    });
+  });
+  if (!html) html = '<div class="loading-center">Sin slots esta semana</div>';
+  document.getElementById('slots-scroll').innerHTML = html;
 }
 
 // ── SELECCIONAR SLOT ──
-function seleccionarSlot(id) {
-  slotActivo = slotsData.find(s => s.id === id);
+function selSlot(id) {
+  slotActivo = slotsData.find(function(s){ return s.id === id; });
+  if (!slotActivo) return;
+  document.getElementById('app-body').classList.add('detalle-activo');
+
+  // Actualizar topbar mobile
+  var parts = (slotActivo.fechaTexto || '').split(' ');
+  document.getElementById('topbar-titulo').textContent = slotActivo.horaTexto + ' · ' + (parts[0] || '');
+  document.getElementById('topbar-sub').textContent    = (parts[1] || '') + ' ' + (parts[2] || '');
+
+  renderDetalle();
   renderSlots();
-  renderPanel();
 }
 
-function renderPanel() {
-  const main = document.getElementById('main-panel');
-  if (!slotActivo) {
-    main.innerHTML = '<div class="empty-state"><div class="empty-icon">🗓</div><p>Selecciona un slot del panel izquierdo<br>para ver detalles o registrar una cita.</p></div>';
-    return;
-  }
+// ── RENDER DETALLE ──
+function renderDetalle() {
+  if (!slotActivo) return;
+  var s = slotActivo;
+  var parts = (s.fechaTexto || '').split(' ');
+  var dia = parts[1] || '', mes = parts[2] || '', diaNom = parts[0] || '';
 
-  const s = slotActivo;
-  const [diaNombre, diaN, mes] = s.fechaTexto.split(' ');
+  var html = '<div class="slot-card">' +
+    '<div class="slot-card-fecha">' +
+      '<div class="slot-card-dia">' + dia + '</div>' +
+      '<div class="slot-card-mes">' + mes + '</div>' +
+    '</div>' +
+    '<div class="slot-card-div"></div>' +
+    '<div class="slot-card-info">' +
+      '<div class="slot-card-hora">' + s.horaTexto + '</div>' +
+      '<div class="slot-card-sub">' + diaNom + ' &nbsp;<span class="pill ' + s.estado + '">' + s.estado + '</span></div>' +
+    '</div>' +
+  '</div>';
 
-  let contenido = `<div class="main-inner">`;
+  if (s.estado === 'ocupado')  html += renderCitaExistente(s);
+  else if (s.estado === 'bloqueado') html += renderBloqueado(s);
+  else html += renderFormNuevo(s);
 
-  // Slot seleccionado header
-  contenido += `<div class="panel-titulo">slot seleccionado</div>
-  <div class="slot-seleccionado">
-    <div class="slot-sel-fecha">
-      <div class="slot-sel-dia">${diaN}</div>
-      <div class="slot-sel-mes">${mes}</div>
-    </div>
-    <div class="slot-sel-divider"></div>
-    <div class="slot-sel-info">
-      <div class="slot-sel-hora">${s.horaTexto}</div>
-      <div class="slot-sel-estado">${diaNombre} · <span class="pill ${s.estado}" style="font-size:11px">${s.estado}</span></div>
-    </div>
-  </div>`;
-
-  if (s.estado === 'ocupado') {  // s incluye servicioCliente, notasCliente, emailCliente
-    // Mostrar datos de la cita existente
-    contenido += renderCitaExistente(s);
-  } else if (s.estado === 'bloqueado') {
-    contenido += `<div class="cita-existente" style="border-color:var(--bloqueado-border)">
-      <div class="cita-ex-nombre" style="color:var(--text3)">🔒 ${s.titulo || 'Bloqueado'}</div>
-      <p style="font-size:13px;color:var(--text3);margin-top:8px">Este slot está bloqueado manualmente.</p>
-      <button class="btn-cancelar" style="margin-top:14px" onclick="liberarSlot('${s.evento}')">Desbloquear este slot</button>
-    </div>`;
-  } else {
-    // Formulario nueva cita
-    contenido += renderFormNuevaCita(s);
-  }
-
-  contenido += `</div>`;
-  main.innerHTML = contenido;
+  document.getElementById('detalle-inner').innerHTML = html;
+  servicioSel = '';
 }
 
+// ── CITA EXISTENTE ──
 function renderCitaExistente(s) {
-  const tel = s.telefono ? s.telefono.replace(/\D/g,'') : '';
-  const servicio = s.servicioCliente || '';
-  const notas    = s.notasCliente    || '';
-  const email    = s.emailCliente    || '';
+  var tel      = (s.telefono || '').replace(/\D/g,'');
+  var nombre   = s.titulo ? s.titulo.split(' - ')[0] : '';
+  var servicio = s.servicioCliente || '';
+  var notas    = s.notasCliente    || '';
+  var email    = s.emailCliente    || '';
 
-  const msgRecordatorio =
-    'Hola ' + (s.titulo ? s.titulo.split(' - ')[0] : '') + '! Te recordamos que tienes una cita en *' + CFG.negocio + '*:\n\n' +
-    'Fecha: ' + s.fechaTexto + '\n' +
-    'Hora: '  + s.horaTexto  + '\n' +
+  var msgConfirmar =
+    'Hola ' + nombre + '! Tu cita en *' + CFG.negocio + '* esta confirmada:\n\n' +
+    'Fecha: ' + s.fechaTexto + '\nHora: ' + s.horaTexto + '\n' +
     (servicio ? 'Servicio: ' + servicio + '\n' : '') +
     'Direccion: ' + (CFG.direccion || '') + '\n' +
-    (notas ? 'Notas: ' + notas + '\n' : '') +
-    '\nSi necesitas reagendar escribe a este numero.';
+    (notas ? 'Notas: ' + notas + '\n' : '') + '\nTe esperamos!';
 
-  const msgConfirmacion =
-    'Hola ' + (s.titulo ? s.titulo.split(' - ')[0] : '') + '! Tu cita en *' + CFG.negocio + '* esta confirmada:\n\n' +
-    'Fecha: ' + s.fechaTexto + '\n' +
-    'Hora: '  + s.horaTexto  + '\n' +
+  var msgRecordar =
+    'Hola ' + nombre + '! Te recordamos tu cita en *' + CFG.negocio + '*:\n\n' +
+    'Fecha: ' + s.fechaTexto + '\nHora: ' + s.horaTexto + '\n' +
     (servicio ? 'Servicio: ' + servicio + '\n' : '') +
     'Direccion: ' + (CFG.direccion || '') + '\n' +
-    (notas ? 'Notas: ' + notas + '\n' : '') +
-    '\nTe esperamos!';
+    (notas ? 'Notas: ' + notas + '\n' : '') + '\nSi necesitas reagendar escribe aqui.';
 
-  const waConfirmar   = tel ? 'https://wa.me/52' + tel + '?text=' + encodeURIComponent(msgConfirmacion)   : '';
-  const waRecordatorio = tel ? 'https://wa.me/52' + tel + '?text=' + encodeURIComponent(msgRecordatorio) : '';
+  var waC = tel ? 'https://wa.me/52' + tel + '?text=' + encodeURIComponent(msgConfirmar) : '';
+  var waR = tel ? 'https://wa.me/52' + tel + '?text=' + encodeURIComponent(msgRecordar)  : '';
 
-  return '<div class="panel-titulo">datos de la cita</div>' +
-  '<div class="cita-existente">' +
-    '<div class="cita-ex-nombre">' + (s.titulo || '—') + '</div>' +
-    (tel     ? '<div class="cita-ex-row"><span>Tel.</span> ' + s.telefono + '</div>' : '') +
-    (email   ? '<div class="cita-ex-row"><span>Email</span> ' + email + '</div>' : '') +
-    (servicio? '<div class="cita-ex-row"><span>Servicio</span> ' + servicio + '</div>' : '') +
-    (notas   ? '<div class="cita-ex-row"><span>Notas</span> ' + notas + '</div>' : '') +
-    '<div class="cita-ex-row"><span>Horario</span> ' + s.horaTexto + ' · ' + s.fechaTexto + '</div>' +
+  var h = '<div class="sec-title">datos de la cita</div>' +
+  '<div class="cita-card">' +
+    '<div class="cita-nombre">' + (s.titulo || '—') + '</div>' +
+    (tel     ? '<div class="cita-row"><span>Telefono</span>' + s.telefono + '</div>' : '') +
+    (email   ? '<div class="cita-row"><span>Email</span>'   + email    + '</div>' : '') +
+    (servicio? '<div class="cita-row"><span>Servicio</span>'+ servicio + '</div>' : '') +
+    (notas   ? '<div class="cita-row"><span>Notas</span>'   + notas    + '</div>' : '') +
   '</div>' +
-  '<div class="panel-titulo" style="margin-top:20px">acciones</div>' +
-  '<div class="wa-btns" style="flex-direction:column;gap:10px">' +
-    (waConfirmar    ? '<a class="btn-wa btn-wa-cliente" href="' + waConfirmar    + '" target="_blank">WA — Confirmacion al cliente</a>' : '') +
-    (waRecordatorio ? '<a class="btn-wa btn-wa-negocio" href="' + waRecordatorio + '" target="_blank">WA — Recordatorio de cita</a>'   : '') +
+  '<div class="sec-title">acciones</div>' +
+  '<div class="wa-grid">' +
+    (waC ? '<a class="btn-wa btn-wa-confirmar" href="' + waC + '" target="_blank">WA — Confirmacion al cliente</a>' : '') +
+    (waR ? '<a class="btn-wa btn-wa-recordar"  href="' + waR + '" target="_blank">WA — Recordatorio de cita</a>'   : '') +
   '</div>' +
-  '<button class="btn-cancelar" style="margin-top:12px" onclick="cancelarCita(\'' + s.evento + '\')">Cancelar esta cita</button>';
+  '<button class="btn-cancelar" onclick="cancelarCita(\'' + s.evento + '\')">Cancelar esta cita</button>';
+  return h;
 }
 
-function renderFormNuevaCita(s) {
-  const serviciosHtml = CFG.servicios.map(sv =>
-    `<button type="button" class="servicio-chip" onclick="toggleServicio(this,'${sv}')">${sv}</button>`
-  ).join('');
-
-  return `<div class="panel-titulo">nueva cita</div>
-  <div class="form-cita">
-    <div class="form-row">
-      <div class="form-group">
-        <label>Nombre del cliente *</label>
-        <input type="text" id="f-nombre" placeholder="Nombre completo" autocomplete="off"/>
-      </div>
-      <div class="form-group">
-        <label>Teléfono *</label>
-        <input type="tel" id="f-tel" placeholder="10 dígitos" maxlength="15"/>
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Email del cliente</label>
-        <input type="email" id="f-email" placeholder="correo@ejemplo.com (opcional)"/>
-      </div>
-    </div>
-    <div class="form-group">
-      <label>Servicio</label>
-      <div class="servicios-grid">${serviciosHtml}</div>
-    </div>
-    <div class="form-group">
-      <label>Notas adicionales</label>
-      <textarea id="f-notas" placeholder="Alergias, preferencias, referencias..."></textarea>
-    </div>
-    <button class="btn-guardar" onclick="guardarCita()">Registrar cita</button>
-  </div>
-
-  <div class="bloqueo-section">
-    <div class="panel-titulo">bloquear slot</div>
-    <div class="form-cita">
-      <div class="form-group">
-        <label>Motivo del bloqueo</label>
-        <input type="text" id="f-motivo" placeholder="Comida, permiso, mantenimiento..."/>
-      </div>
-      <button class="btn-guardar" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border2)" onclick="bloquearSlot()">Bloquear este horario</button>
-    </div>
-  </div>`;
+// ── BLOQUEADO ──
+function renderBloqueado(s) {
+  return '<div class="sec-title">slot bloqueado</div>' +
+  '<div class="cita-card" style="border-color:var(--grb)">' +
+    '<div class="cita-nombre" style="color:var(--grt)">' + (s.titulo || 'No disponible') + '</div>' +
+  '</div>' +
+  '<button class="btn-cancelar" style="border-color:var(--grb);color:var(--grt);margin-top:0" onclick="liberarSlot(\'' + s.evento + '\')">Desbloquear este horario</button>';
 }
 
-// ── SERVICIOS CHIPS ──
-let servicioSeleccionado = '';
-function toggleServicio(el, srv) {
-  document.querySelectorAll('.servicio-chip').forEach(c => c.classList.remove('seleccionado'));
-  if (servicioSeleccionado === srv) { servicioSeleccionado = ''; return; }
-  el.classList.add('seleccionado');
-  servicioSeleccionado = srv;
+// ── FORMULARIO NUEVO ──
+function renderFormNuevo(s) {
+  var chips = CFG.servicios.map(function(sv){
+    return '<button type="button" class="chip" onclick="toggleChip(this,\'' + sv.replace(/'/g,"\\'") + '\')">' + sv + '</button>';
+  }).join('');
+  return '<div class="sec-title">nueva cita</div>' +
+  '<div class="form-row">' +
+    '<div class="form-group"><label>Nombre *</label><input type="text" id="f-nombre" placeholder="Nombre completo" autocomplete="off" autocorrect="off"/></div>' +
+    '<div class="form-group"><label>Telefono *</label><input type="tel" id="f-tel" placeholder="10 digitos" maxlength="15"/></div>' +
+  '</div>' +
+  '<div class="form-group"><label>Email (opcional)</label><input type="email" id="f-email" placeholder="correo@ejemplo.com"/></div>' +
+  '<div class="form-group"><label>Servicio</label><div class="servicios-grid">' + chips + '</div></div>' +
+  '<div class="form-group"><label>Notas</label><textarea id="f-notas" placeholder="Referencias, preferencias, alergias..."></textarea></div>' +
+  '<button class="btn-primary" id="btn-guardar" onclick="guardarCita()">Registrar cita</button>' +
+  '<div class="bloqueo-sep">' +
+    '<div class="sec-title">bloquear horario</div>' +
+    '<div class="form-group"><label>Motivo</label><input type="text" id="f-motivo" placeholder="Comida, permiso, mantenimiento..."/></div>' +
+    '<button class="btn-secondary" onclick="bloquearSlot()">Bloquear este horario</button>' +
+  '</div>';
+}
+
+// ── TOGGLE CHIPS ──
+function toggleChip(el, sv) {
+  document.querySelectorAll('.chip').forEach(function(c){ c.classList.remove('sel'); });
+  if (servicioSel === sv) { servicioSel = ''; return; }
+  el.classList.add('sel');
+  servicioSel = sv;
 }
 
 // ── GUARDAR CITA ──
-async function guardarCita() {
-  const nombre = document.getElementById('f-nombre')?.value.trim();
-  const tel = document.getElementById('f-tel')?.value.trim();
-  const notas = document.getElementById('f-notas')?.value.trim();
-  const email = document.getElementById('f-email')?.value.trim() || '';
+function guardarCita() {
+  var nombre = (document.getElementById('f-nombre') || {}).value || '';
+  var tel    = (document.getElementById('f-tel')    || {}).value || '';
+  var email  = (document.getElementById('f-email')  || {}).value || '';
+  var notas  = (document.getElementById('f-notas')  || {}).value || '';
+  nombre = nombre.trim(); tel = tel.trim(); email = email.trim(); notas = notas.trim();
 
   if (!nombre || !tel) { toast('Nombre y telefono son obligatorios', 'err'); return; }
-  if (tel.replace(/\D/g,'').length < 10) { toast('Telefono invalido (min. 10 digitos)', 'err'); return; }
+  if (tel.replace(/\D/g,'').length < 10) { toast('Telefono invalido (min 10 digitos)', 'err'); return; }
 
-  const btn = document.querySelector('.btn-guardar');
+  var btn = document.getElementById('btn-guardar');
   if (btn) { btn.disabled = true; btn.textContent = 'Registrando...'; }
 
-  const res = await api({
-    accion: 'crear_cita',
-    inicio: slotActivo.inicio,
-    fin: slotActivo.fin,
-    nombre: nombre,
+  api({
+    accion:   'crear_cita',
+    inicio:   slotActivo.inicio,
+    fin:      slotActivo.fin,
+    nombre:   nombre,
     telefono: tel,
-    email: email,
-    servicio: servicioSeleccionado || '',
-    notas: notas || '',
+    email:    email,
+    servicio: servicioSel,
+    notas:    notas,
+  }, function(err, res) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Registrar cita'; }
+    if (err || !res) { toast('Error de conexion', 'err'); return; }
+    if (!res.ok) { toast('Error: ' + (res.error || 'desconocido'), 'err'); return; }
+
+    toast('Cita registrada en Calendar', 'ok');
+
+    var telC = (res.telCliente || '').replace(/\D/g,'');
+    var telN = res.telNegocio || '';
+    var urlC = telC ? 'https://wa.me/52' + telC + '?text=' + encodeURIComponent(res.msgCliente || '') : '';
+    var urlN = telN ? 'https://wa.me/' + telN + '?text=' + encodeURIComponent(res.msgNegocio || '') : '';
+    var urlR = telC ? 'https://wa.me/52' + telC + '?text=' + encodeURIComponent(res.msgRecordatorio || '') : '';
+    var c    = res.cita || {};
+
+    document.getElementById('detalle-inner').innerHTML =
+      '<div class="sec-title">cita confirmada</div>' +
+      '<div class="confirm-card">' +
+        '<div class="confirm-titulo">Registrada en Google Calendar</div>' +
+        '<div class="confirm-row"><span>Cliente</span>' + (c.nombre||nombre) + '</div>' +
+        '<div class="confirm-row"><span>Telefono</span>' + (c.telefono||tel) + '</div>' +
+        (c.email    ? '<div class="confirm-row"><span>Email</span>' + c.email + (res.emailEnviado ? ' (enviado)' : '') + '</div>' : '') +
+        (c.servicio ? '<div class="confirm-row"><span>Servicio</span>' + c.servicio + '</div>' : '') +
+        (c.notas    ? '<div class="confirm-row"><span>Notas</span>' + c.notas + '</div>' : '') +
+        '<div class="confirm-row"><span>Fecha</span>' + (c.fechaTexto||'') + ' ' + (c.horaTexto||'') + '</div>' +
+      '</div>' +
+      '<div class="sec-title">enviar whatsapp</div>' +
+      '<p style="font-size:12px;color:var(--t3);margin-bottom:12px">Toca cada boton — abre WhatsApp con el mensaje listo.</p>' +
+      '<div class="wa-grid">' +
+        (urlC ? '<a class="btn-wa btn-wa-confirmar" href="' + urlC + '" target="_blank">WA — Confirmacion al cliente</a>' : '') +
+        (urlN ? '<a class="btn-wa btn-wa-yo"        href="' + urlN + '" target="_blank">WA — Notificarme a mi</a>'       : '') +
+        (urlR ? '<a class="btn-wa btn-wa-recordar"  href="' + urlR + '" target="_blank">WA — Recordatorio (para mas tarde)</a>' : '') +
+      '</div>' +
+      '<button class="btn-secondary" style="margin-top:16px" onclick="volverLista();cargarSlots()">Nueva cita</button>';
+
+    cargarSlots();
   });
-
-  if (btn) { btn.disabled = false; btn.textContent = 'Registrar cita'; }
-  if (!res) return;
-  if (!res.ok) { toast('Error: ' + (res.error || 'desconocido'), 'err'); return; }
-
-  toast('Cita registrada en Calendar', 'ok');
-
-  // Construir links WA localmente con los textos que devuelve el script
-  if (res.msgCliente && res.telCliente) {
-    const urlCliente = 'https://wa.me/52' + res.telCliente.replace(/\D/g,'') + '?text=' + encodeURIComponent(res.msgCliente);
-    const urlNegocio     = 'https://wa.me/' + res.telNegocio + '?text=' + encodeURIComponent(res.msgNegocio);
-    const urlRecordatorio = res.telCliente ? 'https://wa.me/52' + res.telCliente + '?text=' + encodeURIComponent(res.msgRecordatorio || '') : '';
-
-    // Mostrar panel de confirmacion con botones WA
-    const main = document.getElementById('main-panel');
-    const c = res.cita || {};
-    main.innerHTML = '<div class="main-inner">' +
-      '<div class="panel-titulo">cita registrada</div>' +
-      '<div class="cita-existente" style="border-color:var(--libre-border);margin-bottom:20px">' +
-        '<div class="cita-ex-nombre" style="color:var(--libre-text)">Cita confirmada en Google Calendar</div>' +
-        '<div class="cita-ex-row" style="margin-top:10px"><span>Cliente</span> ' + (c.nombre||nombre) + '</div>' +
-        '<div class="cita-ex-row"><span>Tel.</span> ' + (c.telefono||tel) + '</div>' +
-        (c.email ? '<div class="cita-ex-row"><span>Email</span> ' + c.email + (res.emailEnviado ? ' (enviado)' : '') + '</div>' : '') +
-        '<div class="cita-ex-row"><span>Hora</span> ' + (c.fechaTexto||'') + ' ' + (c.horaTexto||'') + '</div>' +
-        (c.servicio ? '<div class="cita-ex-row"><span>Servicio</span> ' + c.servicio + '</div>' : '') +
-      '</div>' +
-      (urlRecordatorio ? '<a class="btn-wa btn-wa-negocio" style="margin-top:8px" href="' + urlRecordatorio + '" target="_blank">WA — Recordatorio al cliente</a>' : '') +
-      '<div class="panel-titulo">enviar whatsapp</div>' +
-      '<p style="font-size:12px;color:var(--text3);margin-bottom:12px">Haz clic en cada boton — se abre WhatsApp con el mensaje listo para enviar.</p>' +
-      '<div class="wa-btns">' +
-        '<a class="btn-wa btn-wa-cliente" href="' + urlCliente + '" target="_blank">WA — Confirmar al cliente</a>' +
-        '<a class="btn-wa btn-wa-negocio" href="' + urlNegocio + '" target="_blank">WA — Notificarme a mi</a>' +
-      '</div>' +
-    '</div>';
-
-    slotActivo = null;
-    await cargarSlots();
-    return;
-  }
-
-  await cargarSlots();
-  const nuevo = slotsData.find(s => s.inicio === slotActivo?.inicio);
-  if (nuevo) { slotActivo = nuevo; renderPanel(); }
 }
 
-// ── BLOQUEAR SLOT ──
-async function bloquearSlot() {
-  const motivo = document.getElementById('f-motivo')?.value.trim() || 'No disponible';
-  const res = await api({ accion: 'bloquear_slot', inicio: slotActivo.inicio, fin: slotActivo.fin, motivo: motivo });
-  if (!res || !res.ok) { toast('Error al bloquear: ' + (res?.error || 'desconocido'), 'err'); return; }
-  toast('Slot bloqueado', 'ok');
-  await cargarSlots();
-  slotActivo = slotsData.find(s => s.inicio === slotActivo.inicio);
-  renderPanel();
+// ── BLOQUEAR ──
+function bloquearSlot() {
+  var motivo = ((document.getElementById('f-motivo') || {}).value || '').trim() || 'No disponible';
+  api({ accion: 'bloquear_slot', inicio: slotActivo.inicio, fin: slotActivo.fin, motivo: motivo }, function(err, res) {
+    if (err || !res || !res.ok) { toast('Error al bloquear', 'err'); return; }
+    toast('Horario bloqueado', 'ok');
+    cargarSlots();
+    volverLista();
+  });
 }
 
-// ── LIBERAR / CANCELAR ──
-async function liberarSlot(eventoId) {
-  if (!confirm('Desbloquear este slot?')) return;
-  const res = await api({ accion: 'cancelar_cita', eventoId: eventoId });
-  if (!res || !res.ok) { toast('Error: ' + (res?.error || ''), 'err'); return; }
-  toast('Slot liberado', 'ok');
-  await cargarSlots();
-  const s = slotsData.find(s => s.inicio === slotActivo.inicio);
-  slotActivo = s || null;
-  renderPanel();
+// ── LIBERAR ──
+function liberarSlot(eventoId) {
+  if (!confirm('Desbloquear este horario?')) return;
+  api({ accion: 'cancelar_cita', eventoId: eventoId }, function(err, res) {
+    if (err || !res || !res.ok) { toast('Error', 'err'); return; }
+    toast('Horario liberado', 'ok');
+    cargarSlots(); volverLista();
+  });
 }
 
-async function cancelarCita(eventoId) {
+// ── CANCELAR CITA ──
+function cancelarCita(eventoId) {
   if (!confirm('Cancelar esta cita? Se eliminara del calendario.')) return;
-  const res = await api({ accion: 'cancelar_cita', eventoId: eventoId });
-  if (!res || !res.ok) { toast('Error: ' + (res?.error || ''), 'err'); return; }
-  toast('Cita cancelada', 'ok');
-  await cargarSlots();
-  const s = slotsData.find(s => s.inicio === slotActivo.inicio);
-  slotActivo = s || null;
-  renderPanel();
+  api({ accion: 'cancelar_cita', eventoId: eventoId }, function(err, res) {
+    if (err || !res || !res.ok) { toast('Error al cancelar', 'err'); return; }
+    toast('Cita cancelada', 'ok');
+    cargarSlots(); volverLista();
+  });
 }
 
-// ── NAVEGACIÓN SEMANA ──
+// ── NAVEGACION SEMANA ──
 function cambiarSemana(delta) {
   offsetSemana += delta;
   slotActivo = null;
+  document.getElementById('app-body').classList.remove('detalle-activo');
   cargarSlots();
-  document.getElementById('main-panel').innerHTML = '<div class="empty-state"><div class="empty-icon">🗓</div><p>Selecciona un slot del panel izquierdo.</p></div>';
 }
 
 // ── TOAST ──
-function toast(msg, tipo = 'ok') {
-  const t = document.getElementById('toast');
+function toast(msg, tipo) {
+  var t = document.getElementById('toast');
   t.textContent = msg;
-  t.className = `visible ${tipo}`;
+  t.className = 'visible ' + (tipo || 'ok');
   clearTimeout(t._t);
-  t._t = setTimeout(() => { t.className = ''; }, 3000);
+  t._t = setTimeout(function(){ t.className = ''; }, 3000);
+}
+
+// ── PWA SERVICE WORKER ──
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('./sw.js').catch(function(e){ console.log('SW:', e); });
+  });
+}
+
+// ── PWA INSTALL BANNER ──
+var deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', function(e) {
+  e.preventDefault();
+  deferredPrompt = e;
+  var btn = document.getElementById('btn-install');
+  btn.classList.add('visible');
+  btn.onclick = function() {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(function(r){
+      if (r.outcome === 'accepted') btn.classList.remove('visible');
+      deferredPrompt = null;
+    });
+  };
+});
+
+// ── iOS PWA: mostrar hint si no esta instalada ──
+var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+var isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+if (isIOS && !isStandalone) {
+  setTimeout(function(){
+    toast('Para instalar: toca compartir y "Agregar a inicio"', 'ok');
+  }, 2000);
 }
 
 // ── INIT ──
 cargarCFG();
-const urlPrecargada = CFG_DEFAULT.url.includes('TU_ID_AQUI') ? false : CFG.url;
 if (!CFG.url || CFG.url.includes('TU_ID_AQUI')) {
-  setTimeout(abrirConfig, 600);
+  setTimeout(abrirConfig, 500);
 } else {
   cargarSlots();
 }
-
-// ── PWA: registrar service worker ──
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(e => console.log('SW:', e));
-  });
-}
-
-// ── PWA: banner de instalacion ──
-let deferredPrompt = null;
-window.addEventListener('beforeinstallprompt', e => {
-  e.preventDefault();
-  deferredPrompt = e;
-  // Mostrar boton instalar en header
-  const btn = document.createElement('button');
-  btn.className = 'btn-config';
-  btn.textContent = '📲 Instalar app';
-  btn.style.background = '#1a2a05';
-  btn.style.borderColor = '#4a7a10';
-  btn.style.color = '#a8e840';
-  btn.onclick = async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') btn.remove();
-    deferredPrompt = null;
-  };
-  document.querySelector('.header-right').prepend(btn);
-});
 </script>
 </body>
 </html>
