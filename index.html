@@ -377,7 +377,6 @@ const CFG_DEFAULT = {
   negocio:   'Mi Negocio',
   direccion: 'Calle Ejemplo 123, Ciudad',
   servicios: [
-    'Consulta inicial',
     'Servicio 1',
     'Servicio 2',
     'Servicio 3',
@@ -547,7 +546,7 @@ function renderPanel() {
     </div>
   </div>`;
 
-  if (s.estado === 'ocupado') {
+  if (s.estado === 'ocupado') {  // s incluye servicioCliente, notasCliente, emailCliente
     // Mostrar datos de la cita existente
     contenido += renderCitaExistente(s);
   } else if (s.estado === 'bloqueado') {
@@ -566,16 +565,47 @@ function renderPanel() {
 }
 
 function renderCitaExistente(s) {
-  return `<div class="panel-titulo">datos de la cita</div>
-  <div class="cita-existente">
-    <div class="cita-ex-nombre">${s.titulo || '—'}</div>
-    ${s.telefono ? `<div class="cita-ex-row"><span>Tel.</span> ${s.telefono}</div>` : ''}
-    <div class="cita-ex-row"><span>Horario</span> ${s.horaTexto} · ${s.fechaTexto}</div>
-    <div class="wa-btns">
-      ${s.telefono ? `<a class="btn-wa btn-wa-cliente" href="https://wa.me/52${s.telefono.replace(/\D/g,'')}?text=${encodeURIComponent('Hola, te recordamos tu cita programada 📅')}" target="_blank">💬 WA cliente</a>` : ''}
-    </div>
-    <button class="btn-cancelar" onclick="cancelarCita('${s.evento}')">✕ Cancelar esta cita</button>
-  </div>`;
+  const tel = s.telefono ? s.telefono.replace(/\D/g,'') : '';
+  const servicio = s.servicioCliente || '';
+  const notas    = s.notasCliente    || '';
+  const email    = s.emailCliente    || '';
+
+  const msgRecordatorio =
+    'Hola ' + (s.titulo ? s.titulo.split(' - ')[0] : '') + '! Te recordamos que tienes una cita en *' + CFG.negocio + '*:\n\n' +
+    'Fecha: ' + s.fechaTexto + '\n' +
+    'Hora: '  + s.horaTexto  + '\n' +
+    (servicio ? 'Servicio: ' + servicio + '\n' : '') +
+    'Direccion: ' + (CFG.direccion || '') + '\n' +
+    (notas ? 'Notas: ' + notas + '\n' : '') +
+    '\nSi necesitas reagendar escribe a este numero.';
+
+  const msgConfirmacion =
+    'Hola ' + (s.titulo ? s.titulo.split(' - ')[0] : '') + '! Tu cita en *' + CFG.negocio + '* esta confirmada:\n\n' +
+    'Fecha: ' + s.fechaTexto + '\n' +
+    'Hora: '  + s.horaTexto  + '\n' +
+    (servicio ? 'Servicio: ' + servicio + '\n' : '') +
+    'Direccion: ' + (CFG.direccion || '') + '\n' +
+    (notas ? 'Notas: ' + notas + '\n' : '') +
+    '\nTe esperamos!';
+
+  const waConfirmar   = tel ? 'https://wa.me/52' + tel + '?text=' + encodeURIComponent(msgConfirmacion)   : '';
+  const waRecordatorio = tel ? 'https://wa.me/52' + tel + '?text=' + encodeURIComponent(msgRecordatorio) : '';
+
+  return '<div class="panel-titulo">datos de la cita</div>' +
+  '<div class="cita-existente">' +
+    '<div class="cita-ex-nombre">' + (s.titulo || '—') + '</div>' +
+    (tel     ? '<div class="cita-ex-row"><span>Tel.</span> ' + s.telefono + '</div>' : '') +
+    (email   ? '<div class="cita-ex-row"><span>Email</span> ' + email + '</div>' : '') +
+    (servicio? '<div class="cita-ex-row"><span>Servicio</span> ' + servicio + '</div>' : '') +
+    (notas   ? '<div class="cita-ex-row"><span>Notas</span> ' + notas + '</div>' : '') +
+    '<div class="cita-ex-row"><span>Horario</span> ' + s.horaTexto + ' · ' + s.fechaTexto + '</div>' +
+  '</div>' +
+  '<div class="panel-titulo" style="margin-top:20px">acciones</div>' +
+  '<div class="wa-btns" style="flex-direction:column;gap:10px">' +
+    (waConfirmar    ? '<a class="btn-wa btn-wa-cliente" href="' + waConfirmar    + '" target="_blank">WA — Confirmacion al cliente</a>' : '') +
+    (waRecordatorio ? '<a class="btn-wa btn-wa-negocio" href="' + waRecordatorio + '" target="_blank">WA — Recordatorio de cita</a>'   : '') +
+  '</div>' +
+  '<button class="btn-cancelar" style="margin-top:12px" onclick="cancelarCita(\'' + s.evento + '\')">Cancelar esta cita</button>';
 }
 
 function renderFormNuevaCita(s) {
@@ -666,7 +696,8 @@ async function guardarCita() {
   // Construir links WA localmente con los textos que devuelve el script
   if (res.msgCliente && res.telCliente) {
     const urlCliente = 'https://wa.me/52' + res.telCliente.replace(/\D/g,'') + '?text=' + encodeURIComponent(res.msgCliente);
-    const urlNegocio = 'https://wa.me/' + res.telNegocio + '?text=' + encodeURIComponent(res.msgNegocio);
+    const urlNegocio     = 'https://wa.me/' + res.telNegocio + '?text=' + encodeURIComponent(res.msgNegocio);
+    const urlRecordatorio = res.telCliente ? 'https://wa.me/52' + res.telCliente + '?text=' + encodeURIComponent(res.msgRecordatorio || '') : '';
 
     // Mostrar panel de confirmacion con botones WA
     const main = document.getElementById('main-panel');
@@ -677,15 +708,16 @@ async function guardarCita() {
         '<div class="cita-ex-nombre" style="color:var(--libre-text)">Cita confirmada en Google Calendar</div>' +
         '<div class="cita-ex-row" style="margin-top:10px"><span>Cliente</span> ' + (c.nombre||nombre) + '</div>' +
         '<div class="cita-ex-row"><span>Tel.</span> ' + (c.telefono||tel) + '</div>' +
-        (c.email ? '<div class="cita-ex-row"><span>Email</span> ' + c.email + (res.emailEnviado ? ' ✓ enviado' : '') + '</div>' : '') +
+        (c.email ? '<div class="cita-ex-row"><span>Email</span> ' + c.email + (res.emailEnviado ? ' (enviado)' : '') + '</div>' : '') +
         '<div class="cita-ex-row"><span>Hora</span> ' + (c.fechaTexto||'') + ' ' + (c.horaTexto||'') + '</div>' +
         (c.servicio ? '<div class="cita-ex-row"><span>Servicio</span> ' + c.servicio + '</div>' : '') +
       '</div>' +
+      (urlRecordatorio ? '<a class="btn-wa btn-wa-negocio" style="margin-top:8px" href="' + urlRecordatorio + '" target="_blank">WA — Recordatorio al cliente</a>' : '') +
       '<div class="panel-titulo">enviar whatsapp</div>' +
       '<p style="font-size:12px;color:var(--text3);margin-bottom:12px">Haz clic en cada boton — se abre WhatsApp con el mensaje listo para enviar.</p>' +
       '<div class="wa-btns">' +
-        '<a class="btn-wa btn-wa-cliente" href="' + urlCliente + '" target="_blank">Confirmar al cliente</a>' +
-        '<a class="btn-wa btn-wa-negocio" href="' + urlNegocio + '" target="_blank">Notificarme a mi</a>' +
+        '<a class="btn-wa btn-wa-cliente" href="' + urlCliente + '" target="_blank">WA — Confirmar al cliente</a>' +
+        '<a class="btn-wa btn-wa-negocio" href="' + urlNegocio + '" target="_blank">WA — Notificarme a mi</a>' +
       '</div>' +
     '</div>';
 
